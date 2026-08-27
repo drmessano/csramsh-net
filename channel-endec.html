@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meshtastic Channel Encoder/Decoder</title>
+  <link rel="stylesheet" href="css/channel-endec.css">
+  <script src="https://cdn.jsdelivr.net/npm/protobufjs@7.2.4/dist/protobuf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.min.js"></script>
+</head>
+<body>
+  <h1>Meshtastic Channel Encoder/Decoder</h1>
+  <p class="back-link"><a href="index.html">&laquo; back to skunk works</a></p>
+
+  <section class="panel">
+    <h2>Decode Config URL / QR</h2>
+    <table class="form-table">
+      <tr>
+        <td>URL or Fragment:</td>
+        <td><input type="text" id="decodeUrl" placeholder="https://meshtastic.org/e/#..."></td>
+      </tr>
+      <tr>
+        <td>or Upload QR Image:</td>
+        <td><input type="file" id="qrUpload" accept="image/*"></td>
+      </tr>
+    </table>
+    <div class="submit-row">
+      <button type="button" id="decodeBtn">Decode</button>
+    </div>
+    <div id="qrStatus"></div>
+    <div class="output-block">
+      <h3>Decoded Config:</h3>
+      <pre id="decodeResult"></pre>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>LoRa Config</h2>
+    <table class="form-table">
+      <tr>
+        <td>Modem Preset:</td>
+        <td>
+          <select id="preset">
+            <option value="0">LongFast</option>
+            <option value="1">LongSlow</option>
+            <option value="2">VeryLongSlow</option>
+            <option value="3">MediumSlow</option>
+            <option value="4">MediumFast</option>
+            <option value="5">ShortSlow</option>
+            <option value="6">ShortFast</option>
+            <option value="7">LongModerate</option>
+            <option value="8">ShortTurbo</option>
+            <option value="custom">Custom</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <td>Bandwidth (kHz):</td>
+        <td><input type="number" id="bandwidth" step="any" readonly></td>
+      </tr>
+      <tr>
+        <td>Spread Factor:</td>
+        <td><input type="number" id="spreadFactor" readonly></td>
+      </tr>
+      <tr>
+        <td>Coding Rate:</td>
+        <td><input type="number" id="codingRate" readonly></td>
+      </tr>
+      <tr>
+        <td>Frequency Offset (Hz):</td>
+        <td><input type="number" id="freqOffset" step="any" value="0"></td>
+      </tr>
+      <tr>
+        <td>Override Frequency (MHz):</td>
+        <td><input type="number" id="overrideFreq" step="any" value="0"></td>
+      </tr>
+    </table>
+  </section>
+
+  <section class="panel">
+    <h2>Channels</h2>
+    <div class="table-scroll">
+      <table class="form-table channel-table">
+        <thead>
+          <tr>
+            <th>#</th><th>Role</th><th>Name</th><th>PSK</th><th>PSK (base64)</th><th title="Relay this channel's traffic to MQTT">MQTT Up</th><th title="Relay MQTT traffic into this channel">MQTT Down</th><th>Del</th>
+          </tr>
+        </thead>
+        <tbody id="channelRows"></tbody>
+      </table>
+    </div>
+    <div class="submit-row channel-controls">
+      <button type="button" id="addChannelBtn">+ Add Channel</button>
+      &nbsp;&nbsp;
+      <label title="When generating, explicitly disable every channel slot beyond the ones listed above, up to 8 — useful for wiping a special-event config off a device.">
+        <input type="checkbox" id="clearHidden"> Clear hidden channels
+      </label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="submit-row">
+      <button type="button" id="encodeBtn">Generate URL &amp; QR</button>
+    </div>
+    <div class="output-block">
+      <canvas id="qrcode"></canvas>
+      <h3>Encoded URL:</h3>
+      <pre id="encodeResult"></pre>
+    </div>
+  </section>
+
+  <script src="js/channel-endec.js"></script>
+</body>
+</html>

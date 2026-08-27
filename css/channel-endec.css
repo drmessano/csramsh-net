@@ -1,0 +1,154 @@
+body {
+  background-color: black;
+  color: #00FF00;
+  font-family: monospace;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+h1, h2, h3 { text-align: center; }
+form { margin-bottom: 30px; }
+table.form-table { width: 900px; border-collapse: collapse; }
+table.form-table td { border: 1px solid #00FF00; padding: 8px; text-align: center; vertical-align: middle; }
+table.form-table input[type="text"], table.form-table select {
+  width: 95%;
+  background-color: black;
+  color: #00FF00;
+  border: none;
+  font-family: monospace;
+  text-align: center;
+}
+table.form-table input[type="checkbox"] { transform: scale(1.2); }
+input[type="file"] { color: #00FF00; font-family: monospace; background-color: black; border: none; }
+/* Gives the "No file chosen" text some breathing room from the button —
+   margin on the button pseudo-element pushes the native label away from it. */
+input[type="file"]::file-selector-button,
+input[type="file"]::-webkit-file-upload-button {
+  color: #00FF00;
+  background-color: black;
+  border: 1px solid #00FF00;
+  font-family: monospace;
+  padding: 6px 12px;
+  margin-right: 16px;
+  cursor: pointer;
+}
+input[type="submit"] {
+  background-color: black;
+  color: #00FF00;
+  border: 1px solid #00FF00;
+  padding: 6px 12px;
+  font-family: monospace;
+  cursor: pointer;
+}
+.submit-row { text-align: center; margin-top: 10px; }
+pre {
+  width: 900px;
+  background-color: black;
+  color: #00FF00;
+  border: 1px solid #00FF00;
+  padding: 10px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin-top: 10px;
+}
+.output-block { width: 900px; margin-bottom: 30px; }
+.output-block h3 { font-size: 1.2em; margin-bottom: 10px; color: #00FF00; }
+#qrcode { display: block; margin: 10px auto 0 auto; background-color: transparent; border-style: none; }
+
+.back-link { width: 900px; text-align: left; }
+.back-link a { color: #00FF00; }
+
+.panel {
+  width: 900px;
+  border: 1px solid #00FF00;
+  padding: 15px 20px 20px 20px;
+  margin-bottom: 25px;
+}
+.panel h2 { margin-top: 0; }
+
+/* Every panel (including this one) is a fixed 900px — wide enough for a
+   fully-populated channel row (name + full-length base64 PSK) — so the box
+   never grows or shrinks as rows are added/removed. table-scroll is just a
+   safety net in case some browser's monospace metrics still overflow it. */
+.table-scroll { overflow-x: auto; }
+
+button {
+  background-color: black;
+  color: #00FF00;
+  border: 1px solid #00FF00;
+  padding: 6px 12px;
+  font-family: monospace;
+  cursor: pointer;
+}
+button:hover { background-color: #003300; }
+
+table.form-table input[type="number"] {
+  width: 95%;
+  background-color: black;
+  color: #00FF00;
+  border: none;
+  font-family: monospace;
+  text-align: center;
+}
+table.form-table input:disabled,
+table.form-table input:read-only.locked,
+table.form-table select:disabled {
+  color: #007700;
+  background-color: #001100;
+}
+input.input-error { color: #FF5555 !important; }
+
+.channel-table { width: 100%; }
+table.channel-table th, table.channel-table td { border: 1px solid #00FF00; padding: 4px; text-align: center; white-space: nowrap; }
+/* These repeat "table.channel-table" (rather than just ".channel-table") to
+   out-specificity the generic table.form-table input/select rule above —
+   otherwise its width:95% silently wins and these sizes never take effect. */
+table.channel-table input[type="text"] {
+  background-color: black;
+  color: #00FF00;
+  border: none;
+  font-family: monospace;
+  text-align: center;
+}
+/* Sized to Meshtastic's own limits so the longest legal value always fits:
+   channel name < 12 bytes; PSK up to 32 bytes (AES256) = 44 base64 chars. */
+table.channel-table input.chan-name { width: 12ch; }
+table.channel-table input.psk-b64 { width: 46ch; }
+table.channel-table select {
+  background-color: black;
+  color: #00FF00;
+  border: none;
+  font-family: monospace;
+  width: auto;
+  min-width: 11ch;
+  padding: 2px 4px;
+}
+.channel-table input:disabled, .channel-table select:disabled {
+  color: #007700;
+  background-color: #001100;
+}
+.channel-controls { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.channel-controls input[type="number"] {
+  width: 3em;
+  background-color: black;
+  color: #00FF00;
+  border: 1px solid #00FF00;
+  text-align: center;
+  font-family: monospace;
+}
+button.row-remove {
+  padding: 2px 6px;
+  color: #FF5555;
+  border-color: #FF5555;
+}
+button.row-remove:hover { background-color: #330000; }
+button:disabled {
+  color: #007700;
+  border-color: #007700;
+  cursor: not-allowed;
+}
+
+#qrStatus { text-align: center; margin: 8px 0; min-height: 1.2em; }
+#qrStatus.success { color: #00FF00; }
+#qrStatus.fail { color: #FF5555; }
