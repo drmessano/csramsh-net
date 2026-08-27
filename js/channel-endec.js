@@ -240,7 +240,7 @@ function renderChannels() {
     const pskVal = document.createElement("input");
     pskVal.type = "text";
     pskVal.className = "psk-b64";
-    pskVal.placeholder = "base64";
+    pskVal.placeholder = "none";
     // Max PSK is 32 bytes (AES256), which is 44 base64 characters with padding.
     pskVal.maxLength = 44;
     pskVal.value = bytesToPskBase64(ch.psk);
