@@ -8,9 +8,21 @@ body {
   flex-direction: column;
   align-items: center;
   min-height: 100vh;
+  overflow-x: hidden; /* the ASCII banner is wider than most windows; it scrolls in its own box below, not the whole page */
+  box-sizing: border-box;
 }
 .ascii-header { text-align: center; }
-.ascii-header pre { font-size: 1.2rem; margin: 0; }
+/* The banner block is centered as a whole (above), but its own text must stay
+   left-aligned — centering pre-formatted ASCII art re-centers each line
+   independently and destroys the character-column alignment it depends on. */
+.ascii-header pre {
+  display: inline-block;
+  text-align: left;
+  font-size: 1.2rem;
+  margin: 0;
+  max-width: calc(100vw - 4rem); /* viewport minus body's 2rem side padding */
+  overflow-x: auto;
+}
 .ascii-header h1 { font-size: 1.5rem; margin: 1rem 0; }
 .intro, .outro { max-width: 1200px; text-align: left; margin: 1rem auto; font-size: 1.1rem; }
 .intro p { margin-bottom: 1rem; }
