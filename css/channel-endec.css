@@ -75,7 +75,7 @@ pre {
 .url-box {
   border: 1px solid #00FF00;
   margin-top: 10px;
-  padding: 4px;
+  padding: 8px; /* matches table.form-table td's padding, so Copy gets the same breathing room Paste gets */
 }
 .url-box pre {
   border: none;
