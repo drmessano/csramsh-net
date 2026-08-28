@@ -54,7 +54,10 @@ pre {
 }
 .output-block { width: 900px; margin-bottom: 30px; }
 .output-block h3 { font-size: 1.2em; margin-bottom: 10px; color: #00FF00; }
-#qrcode { display: block; margin: 0; background-color: transparent; border-style: none; }
+/* inline-block (not block!) so the qr-col cell's text-align:center actually
+   centers it — a block box ignores the parent's text-align entirely, which
+   was silently pinning the QR to its column's left edge. */
+#qrcode { display: inline-block; background-color: transparent; border-style: none; }
 
 /* 3 equal columns spanning the full row: left is empty, QR sits centered in
    the middle column, Download QR sits centered in the right column. */
