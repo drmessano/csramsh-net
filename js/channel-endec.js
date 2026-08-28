@@ -338,16 +338,25 @@ function loadStateFromDecoded(obj) {
     state.lora.codingRate = lora.codingRate || 0;
   }
 
+  // Real exports often pad the settings array with placeholder entries for
+  // unused channel slots — either totally empty (0 bytes) or carrying only a
+  // module_settings sub-message, with no name/psk/uplink/downlink. Those
+  // aren't real channels; blindly turning every array entry into a visible
+  // row resurrected them as phantom "Secondary" channels. A secondary entry
+  // with none of those four fields set is treated as absent. The primary
+  // slot is always kept, even if it happens to be blank too.
   const settings = obj.settings || [];
-  state.channels = settings.slice(0, 8).map((s, i) => ({
-    name: s.name || "",
-    psk: s.psk instanceof Uint8Array ? s.psk : new Uint8Array(0),
-    uplink: !!s.uplinkEnabled,
-    downlink: !!s.downlinkEnabled,
-    id: s.id || randomId(),
-    pskEditable: false,
-    isPrimary: i === 0,
-  }));
+  state.channels = settings.slice(0, 8)
+    .map((s, i) => ({
+      name: s.name || "",
+      psk: s.psk instanceof Uint8Array ? s.psk : new Uint8Array(0),
+      uplink: !!s.uplinkEnabled,
+      downlink: !!s.downlinkEnabled,
+      id: s.id || randomId(),
+      pskEditable: false,
+      isPrimary: i === 0,
+    }))
+    .filter(ch => ch.isPrimary || ch.name || ch.psk.length > 0 || ch.uplink || ch.downlink);
   if (state.channels.length === 0) state.channels = [newChannel("")];
   if (!state.channels.some(c => c.isPrimary)) state.channels[0].isPrimary = true;
 }
