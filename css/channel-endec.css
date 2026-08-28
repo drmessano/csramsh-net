@@ -56,11 +56,17 @@ pre {
 .output-block h3 { font-size: 1.2em; margin-bottom: 10px; color: #00FF00; }
 #qrcode { display: block; margin: 0; background-color: transparent; border-style: none; }
 
-/* Shrink-wraps to exactly QR + button + gap, then centers that as one tight
-   unit — a flex row centered in the full-width panel just left the button
-   looking lost in the leftover space. Table cells vertical-align:middle by
-   default, which is what puts the button beside the QR's vertical center. */
-.qr-table { border-collapse: collapse; margin: 10px auto 0 auto; }
+/* A bordered card sized to its own content (QR + button), centered in the
+   panel — same visual language as .url-box below it, so this reads as one
+   deliberate component instead of two small elements floating loose in the
+   panel's empty space. */
+.qr-box {
+  display: table;
+  border: 1px solid #00FF00;
+  padding: 15px;
+  margin: 10px auto 0 auto;
+}
+.qr-table { border-collapse: collapse; }
 .qr-table td { border: none; padding: 0; vertical-align: middle; }
 .qr-table .qr-btn-cell { padding-left: 20px; }
 
