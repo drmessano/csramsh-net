@@ -71,25 +71,28 @@ pre {
 .qr-table .qr-btn-cell { padding-left: 20px; }
 
 /* Shared layout for "field + button" pairs: URL-to-paste, encoded-URL-to-copy. */
-.input-with-btn { display: flex; align-items: stretch; gap: 8px; width: 100%; }
+.input-with-btn { display: flex; align-items: center; gap: 8px; width: 100%; box-sizing: border-box; }
 .input-with-btn button { flex-shrink: 0; }
 /* One shared border around the field + button, like the decode row's table
    cell already gives its input+Paste button — instead of the pre owning its
-   own separate box with Copy floating outside it. */
+   own separate box with Copy floating outside it. Copy keeps the normal
+   button look (border, background) — same as Paste — it just now sits
+   inside this shared border instead of having its own.  */
 .url-box {
   border: 1px solid #00FF00;
   margin-top: 10px;
-  gap: 0;
+  padding: 4px;
 }
 .url-box pre {
   border: none;
   margin: 0;
   width: auto;
-}
-.url-box button {
-  border: none;
-  border-left: 1px solid #00FF00;
-  border-radius: 0;
+  /* Flex items refuse to shrink below their content's natural width by
+     default (min-width:auto) — for a pre containing one long unbreakable
+     base64 string, that forced the whole row (and page) to overflow
+     sideways instead of wrapping the text. This is what actually lets it
+     wrap and stay inside the box. */
+  min-width: 0;
 }
 table.form-table .input-with-btn input[type="text"] { flex: 1; width: auto; }
 .input-with-btn pre { flex: 1; width: auto; margin-top: 0; }
