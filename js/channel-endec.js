@@ -57,6 +57,14 @@ message LoRaConfig {
   bool sx126x_rx_boosted_gain = 13;
   float override_frequency = 14;
   bool pa_fan_disabled = 15;
+  bool ignore_mqtt = 104;
+  bool config_ok_to_mqtt = 105;
+  bool serial_hal_only = 107;
+}
+
+message ModuleSettings {
+  uint32 position_precision = 1;
+  bool is_muted = 2;
 }
 
 message ChannelSettings {
@@ -65,6 +73,7 @@ message ChannelSettings {
   fixed32 id = 4;
   bool uplink_enabled = 5;
   bool downlink_enabled = 6;
+  ModuleSettings module_settings = 7;
 }
 
 message ChannelSet {
@@ -156,6 +165,9 @@ const state = {
     paFanDisabled: false,
     txPower: 0,
     channelNum: 0,
+    ignoreMqtt: false,
+    configOkToMqtt: false,
+    serialHalOnly: false,
   },
   // Variable-length: only channels actually defined live here (1-8 entries).
   // Which one is primary is tracked by isPrimary, not by array position — the
@@ -369,6 +381,9 @@ function loadStateFromDecoded(obj) {
   state.lora.paFanDisabled = !!lora.paFanDisabled;
   state.lora.txPower = lora.txPower || 0;
   state.lora.channelNum = lora.channelNum || 0;
+  state.lora.ignoreMqtt = !!lora.ignoreMqtt;
+  state.lora.configOkToMqtt = !!lora.configOkToMqtt;
+  state.lora.serialHalOnly = !!lora.serialHalOnly;
 
   if (state.lora.usePreset) {
     const p = PRESETS[state.lora.modemPreset] || PRESETS[0];
@@ -396,7 +411,15 @@ function loadStateFromDecoded(obj) {
       psk: s.psk instanceof Uint8Array ? s.psk : new Uint8Array(0),
       uplink: !!s.uplinkEnabled,
       downlink: !!s.downlinkEnabled,
-      id: s.id || randomId(),
+      // Preserve exactly what was decoded — including a genuine id of 0.
+      // Substituting a random id here (as this used to) fabricates new
+      // data for a channel that never had any, and changes its re-encoded
+      // bytes even when nothing was edited.
+      id: s.id || 0,
+      // Not editable in the UI, but held onto verbatim so a channel that
+      // carries this (undeclared-elsewhere) field round-trips instead of
+      // silently losing it on re-encode.
+      moduleSettings: s.moduleSettings || null,
       pskEditable: false,
       isPrimary: i === 0,
       _rawLength: rawLengths[i],
@@ -422,6 +445,9 @@ function buildChannelSet(clearHidden) {
     uplinkEnabled: !!ch.uplink,
     downlinkEnabled: !!ch.downlink,
     id: ch.id >>> 0,
+    // Re-emit verbatim if this channel came from a decode carrying it —
+    // we don't parse or expose it, but that's not a reason to drop it.
+    ...(ch.moduleSettings ? { moduleSettings: ch.moduleSettings } : {}),
   }));
 
   if (clearHidden) {
@@ -446,6 +472,9 @@ function buildChannelSet(clearHidden) {
     overrideDutyCycle: state.lora.overrideDutyCycle,
     sx126xRxBoostedGain: state.lora.sx126xRxBoostedGain,
     paFanDisabled: state.lora.paFanDisabled,
+    ignoreMqtt: state.lora.ignoreMqtt,
+    configOkToMqtt: state.lora.configOkToMqtt,
+    serialHalOnly: state.lora.serialHalOnly,
   };
 
   const payload = { settings, loraConfig };
