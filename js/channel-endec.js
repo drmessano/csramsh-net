@@ -441,20 +441,36 @@ function buildChannelSet(clearHidden) {
   const ordered = primaryIdx > 0
     ? [state.channels[primaryIdx], ...state.channels.filter((_, idx) => idx !== primaryIdx)]
     : state.channels;
-  const settings = ordered.map(ch => ({
-    name: ch.name || "",
-    psk: ch.psk || new Uint8Array(0),
-    uplinkEnabled: !!ch.uplink,
-    downlinkEnabled: !!ch.downlink,
-    id: ch.id >>> 0,
+  // Only include a key when it's not the type's zero-value. protobufjs's
+  // reflection encode writes a field whenever it's a present own-property —
+  // it does NOT skip it just because the value equals the default the way
+  // proto3 wire format is supposed to. Always including every key (as this
+  // used to) meant a fully-blank channel could never encode to true 0 bytes,
+  // which is exactly the signal both real devices and our own decode filter
+  // use to recognize a channel slot as absent/disabled. Real Meshtastic
+  // exports only ever include fields that are actually set, for the same
+  // reason.
+  const settings = ordered.map(ch => {
+    const s = {};
+    if (ch.name) s.name = ch.name;
+    if (ch.psk && ch.psk.length > 0) s.psk = ch.psk;
+    if (ch.uplink) s.uplinkEnabled = true;
+    if (ch.downlink) s.downlinkEnabled = true;
+    if (ch.id) s.id = ch.id >>> 0;
     // Re-emit verbatim if this channel came from a decode carrying it —
     // we don't parse or expose it, but that's not a reason to drop it.
-    ...(ch.moduleSettings ? { moduleSettings: ch.moduleSettings } : {}),
-  }));
+    if (ch.moduleSettings) s.moduleSettings = ch.moduleSettings;
+    return s;
+  });
 
   if (clearHidden) {
+    // This is what the official app itself writes when you explicitly
+    // disable a channel — confirmed directly against a real decoded export
+    // (channels set to Disabled all carry exactly this moduleSettings
+    // block; ones left alone don't). Matching it, rather than just leaving
+    // the slot blank, is what actually gets it recognized as disabled.
     while (settings.length < 8) {
-      settings.push({ name: "", psk: new Uint8Array(0), uplinkEnabled: false, downlinkEnabled: false, id: 0 });
+      settings.push({ moduleSettings: { positionPrecision: 10, isMuted: false } });
     }
   }
 
