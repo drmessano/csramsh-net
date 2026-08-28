@@ -305,12 +305,55 @@ function setQrStatus(text, cls) {
   el.className = cls || "";
 }
 
+// Walks the raw ChannelSet wire bytes to find each `settings` (field 1)
+// entry's ORIGINAL byte length — independent of which sub-fields our schema
+// happens to declare. A entry a real device actually configured but using
+// only fields we don't parse (e.g. module_settings) is non-zero-length here
+// even though it decodes to an all-blank object under our trimmed schema;
+// a true placeholder/padding slot is genuinely 0 bytes. That distinction is
+// impossible to make from the decoded object alone, since protobufjs just
+// silently drops fields it doesn't recognize.
+function getSettingsRawLengths(bytes) {
+  let i = 0;
+  const lengths = [];
+  function readVarint() {
+    let result = 0, shift = 0;
+    while (true) {
+      const byte = bytes[i++];
+      result |= (byte & 0x7f) << shift;
+      if (!(byte & 0x80)) return result >>> 0;
+      shift += 7;
+    }
+  }
+  while (i < bytes.length) {
+    const tag = readVarint();
+    const fieldNum = tag >>> 3;
+    const wireType = tag & 0x7;
+    if (wireType === 0) {
+      readVarint();
+    } else if (wireType === 2) {
+      const len = readVarint();
+      if (fieldNum === 1) lengths.push(len);
+      i += len;
+    } else if (wireType === 5) {
+      i += 4;
+    } else if (wireType === 1) {
+      i += 8;
+    } else {
+      throw new Error("Unsupported wire type " + wireType + " in ChannelSet");
+    }
+  }
+  return lengths;
+}
+
 async function decodeConfig(rawInput) {
   const frag = extractFragment(rawInput);
   const bytes = base64urlToBytes(frag);
   const ChannelSet = root.lookupType("ChannelSet");
   const msg = ChannelSet.decode(bytes);
-  return ChannelSet.toObject(msg, { defaults: true });
+  const obj = ChannelSet.toObject(msg, { defaults: true });
+  obj.__settingsRawLengths = getSettingsRawLengths(bytes);
+  return obj;
 }
 
 function loadStateFromDecoded(obj) {
@@ -338,14 +381,15 @@ function loadStateFromDecoded(obj) {
     state.lora.codingRate = lora.codingRate || 0;
   }
 
-  // Real exports often pad the settings array with placeholder entries for
-  // unused channel slots — either totally empty (0 bytes) or carrying only a
-  // module_settings sub-message, with no name/psk/uplink/downlink. Those
-  // aren't real channels; blindly turning every array entry into a visible
-  // row resurrected them as phantom "Secondary" channels. A secondary entry
-  // with none of those four fields set is treated as absent. The primary
-  // slot is always kept, even if it happens to be blank too.
+  // Real exports pad the settings array with placeholder entries for unused
+  // channel slots, genuinely 0 bytes on the wire. Blindly turning every array
+  // entry into a visible row resurrected those as phantom "Secondary"
+  // channels. Whether a slot is real is decided by its ORIGINAL raw byte
+  // length (see getSettingsRawLengths) — never by whether the fields we
+  // happen to parse are empty, since a slot can carry real data in a field
+  // we don't support (e.g. module_settings) and still look all-blank to us.
   const settings = obj.settings || [];
+  const rawLengths = obj.__settingsRawLengths || [];
   state.channels = settings.slice(0, 8)
     .map((s, i) => ({
       name: s.name || "",
@@ -355,8 +399,10 @@ function loadStateFromDecoded(obj) {
       id: s.id || randomId(),
       pskEditable: false,
       isPrimary: i === 0,
+      _rawLength: rawLengths[i],
     }))
-    .filter(ch => ch.isPrimary || ch.name || ch.psk.length > 0 || ch.uplink || ch.downlink);
+    .filter(ch => ch.isPrimary || ch._rawLength > 0)
+    .map(({ _rawLength, ...ch }) => ch);
   if (state.channels.length === 0) state.channels = [newChannel("")];
   if (!state.channels.some(c => c.isPrimary)) state.channels[0].isPrimary = true;
 }
@@ -411,6 +457,7 @@ function buildChannelSet(clearHidden) {
 }
 
 function jsonReplacer(key, value) {
+  if (key === "__settingsRawLengths") return undefined; // internal bookkeeping, not real protobuf content
   if (value instanceof Uint8Array) return `base64:${bytesToPskBase64(value)}`;
   return value;
 }
