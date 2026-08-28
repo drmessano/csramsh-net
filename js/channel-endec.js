@@ -187,6 +187,8 @@ function renderLora() {
   document.getElementById("codingRate").value = state.lora.codingRate;
   document.getElementById("freqOffset").value = state.lora.frequencyOffset;
   document.getElementById("overrideFreq").value = state.lora.overrideFrequency;
+  document.getElementById("ignoreMqtt").checked = state.lora.ignoreMqtt;
+  document.getElementById("configOkToMqtt").checked = state.lora.configOkToMqtt;
 
   const locked = state.lora.usePreset;
   ["bandwidth", "spreadFactor", "codingRate"].forEach(id => {
@@ -549,6 +551,8 @@ function init() {
 
   document.getElementById("freqOffset").addEventListener("input", e => { state.lora.frequencyOffset = parseFloat(e.target.value) || 0; });
   document.getElementById("overrideFreq").addEventListener("input", e => { state.lora.overrideFrequency = parseFloat(e.target.value) || 0; });
+  document.getElementById("ignoreMqtt").addEventListener("change", e => { state.lora.ignoreMqtt = e.target.checked; });
+  document.getElementById("configOkToMqtt").addEventListener("change", e => { state.lora.configOkToMqtt = e.target.checked; });
   document.getElementById("bandwidth").addEventListener("input", e => { if (!state.lora.usePreset) state.lora.bandwidth = parseFloat(e.target.value) || 0; });
   document.getElementById("spreadFactor").addEventListener("input", e => { if (!state.lora.usePreset) state.lora.spreadFactor = parseInt(e.target.value, 10) || 0; });
   document.getElementById("codingRate").addEventListener("input", e => { if (!state.lora.usePreset) state.lora.codingRate = parseInt(e.target.value, 10) || 0; });

@@ -80,6 +80,14 @@
         <td>Override Frequency (MHz):</td>
         <td><input type="number" id="overrideFreq" step="any" value="0"></td>
       </tr>
+      <tr>
+        <td>Ignore MQTT:</td>
+        <td><input type="checkbox" id="ignoreMqtt" title="Don't forward MQTT messages over the mesh"></td>
+      </tr>
+      <tr>
+        <td>OK to MQTT:</td>
+        <td><input type="checkbox" id="configOkToMqtt" title="When true, approves this packet/config to be uploaded to MQTT. When false, remote nodes are asked not to forward packets to MQTT."></td>
+      </tr>
     </table>
   </section>
 
