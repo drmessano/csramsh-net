@@ -8,6 +8,12 @@ body {
   padding: 20px;
 }
 h1, h2, h3 { text-align: center; }
+/* Replaces the browser's default focus ring (often a jarring blue/orange
+   glow) with something that matches the terminal theme. */
+input:focus, select:focus, textarea:focus, button:focus {
+  outline: 2px solid #00FF00;
+  outline-offset: 1px;
+}
 form { margin-bottom: 30px; }
 table.form-table { width: 900px; border-collapse: collapse; }
 table.form-table td { border: 1px solid #00FF00; padding: 8px; text-align: center; vertical-align: middle; }
@@ -119,7 +125,7 @@ button {
 button:hover { background-color: #003300; }
 
 table.form-table input[type="number"] {
-  width: 95%;
+  width: 10ch;
   background-color: black;
   color: #00FF00;
   border: none;
