@@ -109,12 +109,12 @@
       <button type="button" id="encodeBtn">Generate URL &amp; QR</button>
     </div>
     <div class="output-block">
-      <div class="qr-row">
-        <canvas id="qrcode"></canvas>
-      </div>
-      <div class="submit-row">
-        <button type="button" id="downloadQrBtn" disabled>Download QR</button>
-      </div>
+      <table class="qr-table">
+        <tr>
+          <td class="qr-cell"><canvas id="qrcode"></canvas></td>
+          <td class="qr-btn-cell"><button type="button" id="downloadQrBtn" disabled>Download QR</button></td>
+        </tr>
+      </table>
       <h3>Encoded URL:</h3>
       <div class="input-with-btn url-box">
         <pre id="encodeResult"></pre>

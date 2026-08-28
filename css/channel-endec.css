@@ -56,7 +56,13 @@ pre {
 .output-block h3 { font-size: 1.2em; margin-bottom: 10px; color: #00FF00; }
 #qrcode { display: block; margin: 0; background-color: transparent; border-style: none; }
 
-.qr-row { display: flex; align-items: center; justify-content: center; margin-top: 10px; }
+/* Shrink-wraps to exactly QR + button + gap, then centers that as one tight
+   unit — a flex row centered in the full-width panel just left the button
+   looking lost in the leftover space. Table cells vertical-align:middle by
+   default, which is what puts the button beside the QR's vertical center. */
+.qr-table { border-collapse: collapse; margin: 10px auto 0 auto; }
+.qr-table td { border: none; padding: 0; vertical-align: middle; }
+.qr-table .qr-btn-cell { padding-left: 20px; }
 
 /* Shared layout for "field + button" pairs: URL-to-paste, encoded-URL-to-copy. */
 .input-with-btn { display: flex; align-items: stretch; gap: 8px; width: 100%; }
