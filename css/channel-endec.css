@@ -59,7 +59,7 @@ pre {
   margin-top: 10px;
 }
 .output-block { width: 900px; margin-bottom: 30px; }
-.output-block h3 { font-size: 1.2em; margin-bottom: 10px; color: #00FF00; }
+.output-block h3 { font-size: 1.2em; margin-top: 0; margin-bottom: 10px; color: #00FF00; }
 /* inline-block (not block!) so the qr-col cell's text-align:center actually
    centers it — a block box ignores the parent's text-align entirely, which
    was silently pinning the QR to its column's left edge. */
@@ -67,7 +67,7 @@ pre {
 
 /* 3 equal columns spanning the full row: left is empty, QR sits centered in
    the middle column, Download QR sits centered in the right column. */
-.qr-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.qr-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
 .qr-table td.qr-col { width: 33.33%; border: none; padding: 0; text-align: center; vertical-align: middle; }
 
 /* Shared layout for "field + button" pairs: URL-to-paste, encoded-URL-to-copy. */
