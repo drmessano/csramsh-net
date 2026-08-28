@@ -56,19 +56,10 @@ pre {
 .output-block h3 { font-size: 1.2em; margin-bottom: 10px; color: #00FF00; }
 #qrcode { display: block; margin: 0; background-color: transparent; border-style: none; }
 
-/* A bordered card sized to its own content (QR + button), centered in the
-   panel — same visual language as .url-box below it, so this reads as one
-   deliberate component instead of two small elements floating loose in the
-   panel's empty space. */
-.qr-box {
-  display: table;
-  border: 1px solid #00FF00;
-  padding: 15px;
-  margin: 10px auto 0 auto;
-}
-.qr-table { border-collapse: collapse; }
-.qr-table td { border: none; padding: 0; vertical-align: middle; }
-.qr-table .qr-btn-cell { padding-left: 20px; }
+/* 3 equal columns spanning the full row: left is empty, QR sits centered in
+   the middle column, Download QR sits centered in the right column. */
+.qr-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.qr-table td.qr-col { width: 33.33%; border: none; padding: 0; text-align: center; vertical-align: middle; }
 
 /* Shared layout for "field + button" pairs: URL-to-paste, encoded-URL-to-copy. */
 .input-with-btn { display: flex; align-items: center; gap: 8px; width: 100%; box-sizing: border-box; }
