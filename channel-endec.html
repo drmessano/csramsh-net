@@ -18,7 +18,12 @@
     <table class="form-table">
       <tr>
         <td>URL or Fragment:</td>
-        <td><input type="text" id="decodeUrl" placeholder="https://meshtastic.org/e/#..."></td>
+        <td>
+          <div class="input-with-btn">
+            <input type="text" id="decodeUrl" placeholder="https://meshtastic.org/e/#...">
+            <button type="button" id="pasteUrlBtn">Paste</button>
+          </div>
+        </td>
       </tr>
       <tr>
         <td>or Upload QR Image:</td>
@@ -104,9 +109,15 @@
       <button type="button" id="encodeBtn">Generate URL &amp; QR</button>
     </div>
     <div class="output-block">
-      <canvas id="qrcode"></canvas>
+      <div class="qr-row">
+        <canvas id="qrcode"></canvas>
+        <button type="button" id="downloadQrBtn" disabled>Download QR</button>
+      </div>
       <h3>Encoded URL:</h3>
-      <pre id="encodeResult"></pre>
+      <div class="input-with-btn">
+        <pre id="encodeResult"></pre>
+        <button type="button" id="copyUrlBtn" disabled>Copy</button>
+      </div>
     </div>
   </section>
 

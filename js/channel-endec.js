@@ -483,16 +483,56 @@ function init() {
 
   document.getElementById("encodeBtn").addEventListener("click", () => {
     const out = document.getElementById("encodeResult");
+    const downloadBtn = document.getElementById("downloadQrBtn");
+    const copyBtn = document.getElementById("copyUrlBtn");
+    downloadBtn.disabled = true;
+    copyBtn.disabled = true;
     try {
       const bytes = buildChannelSet(document.getElementById("clearHidden").checked);
       const b64url = bytesToBase64url(bytes);
       const url = `https://meshtastic.org/e/#${b64url}`;
       out.textContent = url;
+      copyBtn.disabled = false;
       QRCode.toCanvas(document.getElementById("qrcode"), url, err => {
-        if (err) out.textContent += "\n\nQR render error: " + err.message;
+        if (err) {
+          out.textContent += "\n\nQR render error: " + err.message;
+        } else {
+          downloadBtn.disabled = false;
+        }
       });
     } catch (err) {
       out.textContent = "Error: " + err.message;
+    }
+  });
+
+  document.getElementById("downloadQrBtn").addEventListener("click", () => {
+    const canvas = document.getElementById("qrcode");
+    const link = document.createElement("a");
+    link.download = "meshtastic-channel-qr.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  });
+
+  document.getElementById("copyUrlBtn").addEventListener("click", async () => {
+    const btn = document.getElementById("copyUrlBtn");
+    const text = document.getElementById("encodeResult").textContent;
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = btn.textContent;
+      btn.textContent = "Copied!";
+      setTimeout(() => { btn.textContent = original; }, 1500);
+    } catch (err) {
+      setQrStatus("Could not copy to clipboard: " + err.message, "fail");
+    }
+  });
+
+  document.getElementById("pasteUrlBtn").addEventListener("click", async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      document.getElementById("decodeUrl").value = text;
+    } catch (err) {
+      setQrStatus("Could not read clipboard: " + err.message, "fail");
     }
   });
 
