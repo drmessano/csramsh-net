@@ -432,7 +432,7 @@ function loadStateFromDecoded(obj) {
   if (!state.channels.some(c => c.isPrimary)) state.channels[0].isPrimary = true;
 }
 
-function buildChannelSet(clearHidden) {
+function buildChannelSet() {
   const ChannelSet = root.lookupType("ChannelSet");
   // The wire format has no role field — it infers primary from position 0 —
   // so the primary-flagged channel is moved to the front only here, at encode
@@ -462,17 +462,6 @@ function buildChannelSet(clearHidden) {
     if (ch.moduleSettings) s.moduleSettings = ch.moduleSettings;
     return s;
   });
-
-  if (clearHidden) {
-    // This is what the official app itself writes when you explicitly
-    // disable a channel — confirmed directly against a real decoded export
-    // (channels set to Disabled all carry exactly this moduleSettings
-    // block; ones left alone don't). Matching it, rather than just leaving
-    // the slot blank, is what actually gets it recognized as disabled.
-    while (settings.length < 8) {
-      settings.push({ moduleSettings: { positionPrecision: 10, isMuted: false } });
-    }
-  }
 
   const loraConfig = {
     usePreset: state.lora.usePreset,
@@ -593,7 +582,7 @@ function init() {
     downloadBtn.disabled = true;
     copyBtn.disabled = true;
     try {
-      const bytes = buildChannelSet(document.getElementById("clearHidden").checked);
+      const bytes = buildChannelSet();
       const b64url = bytesToBase64url(bytes);
       const url = `https://meshtastic.org/e/#${b64url}`;
       out.textContent = url;
