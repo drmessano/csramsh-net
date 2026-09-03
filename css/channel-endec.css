@@ -56,6 +56,14 @@ pre {
   padding: 10px;
   white-space: pre-wrap;
   word-wrap: break-word;
+  /* Base64url text contains "-" and "_", which browsers treat as natural
+     soft-wrap points (Unicode line-breaking rules) and prefer over filling
+     the line — overflow-wrap:anywhere doesn't override that preference,
+     it only kicks in for a run with NO break opportunities at all. Only
+     word-break:break-all actually ignores those preferred points and
+     packs text to the container's edge regardless of what characters are
+     there. */
+  word-break: break-all;
   margin-top: 10px;
 }
 .output-block { width: 900px; margin-bottom: 30px; }
