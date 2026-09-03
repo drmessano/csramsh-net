@@ -203,7 +203,12 @@ function renderLora() {
   document.getElementById("ignoreMqtt").checked = state.lora.ignoreMqtt;
   document.getElementById("configOkToMqtt").checked = state.lora.configOkToMqtt;
 
-  const locked = state.lora.usePreset;
+  // Locked whenever a preset (real or CSRA) is selected — only "Custom"
+  // unlocks these. Deliberately NOT the same thing as state.lora.usePreset:
+  // CSRA has to stay usePreset:false on the wire (no real ModemPreset
+  // matches its numbers), but that's a wire-format fact, not a reason to
+  // let its fields be edited — that's what Custom is for.
+  const locked = state.lora.presetSelection !== "custom";
   ["bandwidth", "spreadFactor", "codingRate", "channelNum"].forEach(id => {
     const el = document.getElementById(id);
     el.readOnly = locked;
@@ -577,12 +582,12 @@ function init() {
     renderChannels();
   });
 
-  document.getElementById("channelNum").addEventListener("input", e => { if (!state.lora.usePreset) state.lora.channelNum = parseInt(e.target.value, 10) || 0; });
+  document.getElementById("channelNum").addEventListener("input", e => { if (state.lora.presetSelection === "custom") state.lora.channelNum = parseInt(e.target.value, 10) || 0; });
   document.getElementById("ignoreMqtt").addEventListener("change", e => { state.lora.ignoreMqtt = e.target.checked; });
   document.getElementById("configOkToMqtt").addEventListener("change", e => { state.lora.configOkToMqtt = e.target.checked; });
-  document.getElementById("bandwidth").addEventListener("input", e => { if (!state.lora.usePreset) state.lora.bandwidth = parseFloat(e.target.value) || 0; });
-  document.getElementById("spreadFactor").addEventListener("input", e => { if (!state.lora.usePreset) state.lora.spreadFactor = parseInt(e.target.value, 10) || 0; });
-  document.getElementById("codingRate").addEventListener("input", e => { if (!state.lora.usePreset) state.lora.codingRate = parseInt(e.target.value, 10) || 0; });
+  document.getElementById("bandwidth").addEventListener("input", e => { if (state.lora.presetSelection === "custom") state.lora.bandwidth = parseFloat(e.target.value) || 0; });
+  document.getElementById("spreadFactor").addEventListener("input", e => { if (state.lora.presetSelection === "custom") state.lora.spreadFactor = parseInt(e.target.value, 10) || 0; });
+  document.getElementById("codingRate").addEventListener("input", e => { if (state.lora.presetSelection === "custom") state.lora.codingRate = parseInt(e.target.value, 10) || 0; });
 
   document.getElementById("addChannelBtn").addEventListener("click", () => {
     if (state.channels.length >= 8) return;
