@@ -17,6 +17,7 @@ enum ModemPreset {
   SHORT_FAST = 6;
   LONG_MODERATE = 7;
   SHORT_TURBO = 8;
+  LONG_TURBO = 9;
 }
 
 enum RegionCode {
@@ -83,17 +84,22 @@ message ChannelSet {
 `;
 
 // Bandwidth (kHz) / Spread Factor / Coding Rate per preset, matching
-// Meshtastic firmware's RadioInterface::applyModemPreset() table.
+// Meshtastic firmware's current modemPresetToParams() (src/mesh/MeshRadio.h,
+// non-wide/non-2.4GHz values). VERY_LONG_SLOW (2) is deliberately absent —
+// it has no case in that switch at all and silently behaves as LongFast;
+// its enum value is kept in PROTO_DEF only so decoding an old config that
+// specifies it doesn't break. LONG_SLOW (1) is still implemented but is
+// marked [deprecated = true] in the real .proto.
 const PRESETS = {
   0: { label: "LongFast", bandwidth: 250, spreadFactor: 11, codingRate: 5 },
-  1: { label: "LongSlow", bandwidth: 125, spreadFactor: 12, codingRate: 8 },
-  2: { label: "VeryLongSlow", bandwidth: 62.5, spreadFactor: 12, codingRate: 8 },
+  1: { label: "LongSlow (Deprecated)", bandwidth: 125, spreadFactor: 12, codingRate: 8 },
   3: { label: "MediumSlow", bandwidth: 250, spreadFactor: 10, codingRate: 5 },
   4: { label: "MediumFast", bandwidth: 250, spreadFactor: 9, codingRate: 5 },
   5: { label: "ShortSlow", bandwidth: 250, spreadFactor: 8, codingRate: 5 },
   6: { label: "ShortFast", bandwidth: 250, spreadFactor: 7, codingRate: 5 },
   7: { label: "LongModerate", bandwidth: 125, spreadFactor: 11, codingRate: 8 },
   8: { label: "ShortTurbo", bandwidth: 500, spreadFactor: 7, codingRate: 5 },
+  9: { label: "LongTurbo", bandwidth: 500, spreadFactor: 11, codingRate: 8 },
 };
 
 // Region is not exposed in the UI; every encoded config is hardcoded to US.
@@ -181,6 +187,17 @@ const state = {
 
 function renderLora() {
   const presetSel = document.getElementById("preset");
+  if (state.lora.usePreset && !PRESETS[state.lora.modemPreset]
+      && ![...presetSel.options].some(o => o.value === String(state.lora.modemPreset))) {
+    // A decoded config can specify a preset number we don't have (e.g. the
+    // now-nonfunctional VERY_LONG_SLOW=2, or a newer one we don't know
+    // about yet) — add it so the dropdown shows the real value instead of
+    // going blank, even though we can't offer real bandwidth/SF/CR for it.
+    const opt = document.createElement("option");
+    opt.value = String(state.lora.modemPreset);
+    opt.textContent = `Unknown/unsupported (${state.lora.modemPreset})`;
+    presetSel.appendChild(opt);
+  }
   presetSel.value = state.lora.usePreset ? String(state.lora.modemPreset) : "custom";
   document.getElementById("bandwidth").value = state.lora.bandwidth;
   document.getElementById("spreadFactor").value = state.lora.spreadFactor;
