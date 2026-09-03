@@ -594,22 +594,18 @@ function init() {
       state.lora.codingRate = p.codingRate;
       state.lora.channelNum = p.channelNum || 0;
       const presetPsk = p.psk || new Uint8Array([1]); // the well-known Default key unless the preset specifies its own
-      // Unlock/show the PSK field when the preset carries its own specific
-      // key (currently just CSRA) rather than leaving it locked on the
-      // generic, already-familiar Default key.
-      const presetHasOwnPsk = !!p.psk;
 
       if (state.channels.length === 0) {
         const primary = newChannel(p.label);
         primary.psk = presetPsk;
-        primary.pskEditable = presetHasOwnPsk;
+        primary.pskEditable = true;
         primary.isPrimary = true;
         state.channels.push(primary);
       } else {
         const primary = state.channels.find(c => c.isPrimary) || state.channels[0];
         primary.name = p.label;
         primary.psk = presetPsk;
-        primary.pskEditable = presetHasOwnPsk;
+        primary.pskEditable = true;
       }
     }
     renderLora();
