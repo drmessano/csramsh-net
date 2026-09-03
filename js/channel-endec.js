@@ -106,11 +106,18 @@ const PRESETS = {
 // own custom radio settings. Selecting it is equivalent to Custom mode
 // (use_preset stays false; there's no matching ModemPreset value) with
 // these values pre-filled instead of typed in by hand.
-// psk 0x02 is "Simple2" — the protocol's own 1-byte shorthand scheme
+// psk 0x09 is "Simple8" — the protocol's own 1-byte shorthand scheme
 // (ChannelSettings.psk doc: byte 1 = "Default", bytes 2-10 = Simple1-9,
-// each just the default key with its last byte incremented). Short and
-// easy to exchange, same as the Default key ("AQ=="), but distinct from it.
-const CSRA_PRESET = { label: "CSRA", bandwidth: 500, spreadFactor: 9, codingRate: 5, channelNum: 47, psk: new Uint8Array([2]) };
+// each just the default key with its last byte incremented). A real,
+// firmware-recognized short key, distinct from the Default key ("AQ==")
+// every other preset uses. Base64-encodes as "CQ==" — chosen specifically
+// because that's all-uppercase (a 1-byte key's base64 is only 2 real
+// characters + "==", and most byte values produce a lowercase second
+// character, e.g. 0x02 -> "Ag=="). A true short mnemonic like "CSRA=="
+// isn't possible — Meshtastic PSKs must be exactly 0, 1, 16, or 32 bytes,
+// so anything longer than 1 byte has to jump straight to a full 16/32-byte
+// key.
+const CSRA_PRESET = { label: "CSRA", bandwidth: 500, spreadFactor: 9, codingRate: 5, channelNum: 47, psk: new Uint8Array([9]) };
 
 // Region is not exposed in the UI; every encoded config is hardcoded to US.
 const REGION_US = 1;
