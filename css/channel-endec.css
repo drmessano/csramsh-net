@@ -132,6 +132,15 @@ table.form-table input[type="number"] {
   font-family: monospace;
   text-align: center;
 }
+/* Bandwidth/Spread Factor/Coding Rate are <select> (constrained to the LoRa
+   PHY's actual legal values), not free-typed numbers — sized to match the
+   number inputs around them rather than the generic select's 95% width. */
+table.form-table select#bandwidth,
+table.form-table select#spreadFactor,
+table.form-table select#codingRate {
+  width: 10ch;
+  text-align: center;
+}
 table.form-table input:disabled,
 table.form-table input:read-only.locked,
 table.form-table select:disabled {

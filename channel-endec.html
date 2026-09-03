@@ -63,19 +63,49 @@
       </tr>
       <tr>
         <td>Bandwidth (kHz):</td>
-        <td><input type="number" id="bandwidth" step="any" readonly></td>
+        <td>
+          <select id="bandwidth" disabled>
+            <option value="7.8">7.8</option>
+            <option value="10.4">10.4</option>
+            <option value="15.6">15.6</option>
+            <option value="20.8">20.8</option>
+            <option value="31.25">31.25</option>
+            <option value="41.7">41.7</option>
+            <option value="62.5">62.5</option>
+            <option value="125">125</option>
+            <option value="250">250</option>
+            <option value="500">500</option>
+          </select>
+        </td>
       </tr>
       <tr>
         <td>Spread Factor:</td>
-        <td><input type="number" id="spreadFactor" readonly></td>
+        <td>
+          <select id="spreadFactor" disabled>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+            <option value="10">10</option>
+            <option value="11">11</option>
+            <option value="12">12</option>
+          </select>
+        </td>
       </tr>
       <tr>
         <td>Coding Rate:</td>
-        <td><input type="number" id="codingRate" readonly></td>
+        <td>
+          <select id="codingRate" disabled>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+          </select>
+        </td>
       </tr>
       <tr>
         <td>Frequency Slot:</td>
-        <td><input type="number" id="channelNum" step="1" readonly></td>
+        <td><input type="number" id="channelNum" step="1" min="0" readonly></td>
       </tr>
       <tr>
         <td>Ignore MQTT:</td>

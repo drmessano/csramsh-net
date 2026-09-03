@@ -204,13 +204,29 @@ const state = {
   ],
 };
 
+// Number of distinct frequency slots for a given bandwidth in the US region
+// — the only region this tool encodes. Matches RadioInterface.cpp exactly:
+// numChannels = floor((freqEnd - freqStart) / (spacing + bw/1000)), and for
+// US: freqStart=902.0, freqEnd=928.0 (MHz), spacing=0. channel_num 0 means
+// "auto-select via name hash", so 0 is always valid regardless of bandwidth;
+// 1..maxChannelNum address genuinely distinct slots without wrapping.
+function maxChannelNumFor(bwKHz) {
+  return Math.floor(26000 / bwKHz);
+}
+
 function renderLora() {
   const presetSel = document.getElementById("preset");
   presetSel.value = state.lora.presetSelection;
   document.getElementById("bandwidth").value = state.lora.bandwidth;
   document.getElementById("spreadFactor").value = state.lora.spreadFactor;
   document.getElementById("codingRate").value = state.lora.codingRate;
-  document.getElementById("channelNum").value = state.lora.channelNum;
+
+  const channelNumEl = document.getElementById("channelNum");
+  const maxChannelNum = maxChannelNumFor(state.lora.bandwidth);
+  if (state.lora.channelNum > maxChannelNum) state.lora.channelNum = maxChannelNum;
+  channelNumEl.max = maxChannelNum;
+  channelNumEl.value = state.lora.channelNum;
+
   document.getElementById("ignoreMqtt").checked = state.lora.ignoreMqtt;
   document.getElementById("configOkToMqtt").checked = state.lora.configOkToMqtt;
 
@@ -220,11 +236,11 @@ function renderLora() {
   // matches its numbers), but that's a wire-format fact, not a reason to
   // let its fields be edited — that's what Custom is for.
   const locked = state.lora.presetSelection !== "custom";
-  ["bandwidth", "spreadFactor", "codingRate", "channelNum"].forEach(id => {
-    const el = document.getElementById(id);
-    el.readOnly = locked;
-    el.classList.toggle("locked", locked);
+  ["bandwidth", "spreadFactor", "codingRate"].forEach(id => {
+    document.getElementById(id).disabled = locked;
   });
+  channelNumEl.readOnly = locked;
+  channelNumEl.classList.toggle("locked", locked);
 }
 
 function renderChannels() {
@@ -600,12 +616,26 @@ function init() {
     renderChannels();
   });
 
-  document.getElementById("channelNum").addEventListener("input", e => { if (state.lora.presetSelection === "custom") state.lora.channelNum = parseInt(e.target.value, 10) || 0; });
+  // Frequency Slot's valid range depends on Bandwidth, so clamp against the
+  // current max on every edit rather than only on blur/re-render.
+  document.getElementById("channelNum").addEventListener("input", e => {
+    if (state.lora.presetSelection !== "custom") return;
+    const n = parseInt(e.target.value, 10) || 0;
+    state.lora.channelNum = Math.max(0, Math.min(n, maxChannelNumFor(state.lora.bandwidth)));
+  });
   document.getElementById("ignoreMqtt").addEventListener("change", e => { state.lora.ignoreMqtt = e.target.checked; });
   document.getElementById("configOkToMqtt").addEventListener("change", e => { state.lora.configOkToMqtt = e.target.checked; });
-  document.getElementById("bandwidth").addEventListener("input", e => { if (state.lora.presetSelection === "custom") state.lora.bandwidth = parseFloat(e.target.value) || 0; });
-  document.getElementById("spreadFactor").addEventListener("input", e => { if (state.lora.presetSelection === "custom") state.lora.spreadFactor = parseInt(e.target.value, 10) || 0; });
-  document.getElementById("codingRate").addEventListener("input", e => { if (state.lora.presetSelection === "custom") state.lora.codingRate = parseInt(e.target.value, 10) || 0; });
+  // Bandwidth/Spread Factor/Coding Rate are now <select> elements (only the
+  // LoRa PHY's actual legal values are offered), so "change" fires on pick
+  // rather than "input" on keystroke. Re-render after a bandwidth change so
+  // Frequency Slot's dynamic max/clamp stays in sync with it.
+  document.getElementById("bandwidth").addEventListener("change", e => {
+    if (state.lora.presetSelection !== "custom") return;
+    state.lora.bandwidth = parseFloat(e.target.value) || 0;
+    renderLora();
+  });
+  document.getElementById("spreadFactor").addEventListener("change", e => { if (state.lora.presetSelection === "custom") state.lora.spreadFactor = parseInt(e.target.value, 10) || 0; });
+  document.getElementById("codingRate").addEventListener("change", e => { if (state.lora.presetSelection === "custom") state.lora.codingRate = parseInt(e.target.value, 10) || 0; });
 
   document.getElementById("addChannelBtn").addEventListener("click", () => {
     if (state.channels.length >= 8) return;
