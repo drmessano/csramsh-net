@@ -591,14 +591,11 @@ function decodeAndLoad(raw) {
       loadStateFromDecoded(obj);
       renderLora();
       renderChannels();
-      setQrStatus("Decoded and loaded into the editor below.", "success");
     }).catch(err => {
       out.textContent = "Error: " + err.message;
-      setQrStatus("Decode failed.", "fail");
     });
   } catch (err) {
     out.textContent = "Error: " + err.message;
-    setQrStatus("Decode failed.", "fail");
   }
 }
 
@@ -686,11 +683,6 @@ function init() {
     renderChannels();
   });
 
-  document.getElementById("decodeBtn").addEventListener("click", () => {
-    clearTimeout(decodeTimer);
-    decodeAndLoad(document.getElementById("decodeUrl").value.trim());
-  });
-
   // Auto-decode as you type/paste, debounced so it doesn't try mid-paste or
   // on every keystroke of manual entry. Covers a real Cmd/Ctrl+V paste into
   // the field directly; the Paste button below triggers decode itself since
@@ -703,13 +695,6 @@ function init() {
       return;
     }
     decodeTimer = setTimeout(() => decodeAndLoad(value), 400);
-  });
-
-  // The URL/QR already regenerate automatically (debounced) after every
-  // change; this button just forces it immediately, bypassing the debounce.
-  document.getElementById("encodeBtn").addEventListener("click", () => {
-    clearTimeout(regenerateTimer);
-    regenerateOutput();
   });
 
   document.getElementById("downloadQrBtn").addEventListener("click", () => {
