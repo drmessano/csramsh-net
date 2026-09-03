@@ -576,10 +576,16 @@ function init() {
     state.lora.presetSelection = val;
     if (val === "custom") {
       state.lora.usePreset = false;
-      // Nothing about Custom implies any particular key, so don't leave a
-      // stale one (e.g. the previous preset's Default key) sitting there.
+      // Custom implies nothing about the primary channel — no name, no
+      // particular key — so don't leave the previous preset's values (e.g.
+      // "LongFast" / its Default key) sitting there looking like a choice
+      // that was actually made.
       const primary = state.channels.find(c => c.isPrimary) || state.channels[0];
-      if (primary) primary.psk = new Uint8Array(0);
+      if (primary) {
+        primary.name = "";
+        primary.psk = new Uint8Array(0);
+        primary.pskEditable = false;
+      }
     } else {
       // Both a real firmware preset and CSRA (our own local shortcut, not
       // a real ModemPreset) populate bandwidth/SF/CR/frequency slot and the
