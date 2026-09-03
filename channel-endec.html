@@ -56,6 +56,7 @@
             <option value="6">ShortFast</option>
             <option value="5">ShortSlow</option>
             <option value="8">ShortTurbo</option>
+            <option value="csra">CSRA</option>
             <option value="custom">Custom</option>
           </select>
         </td>
@@ -73,12 +74,8 @@
         <td><input type="number" id="codingRate" readonly></td>
       </tr>
       <tr>
-        <td>Frequency Offset (Hz):</td>
-        <td><input type="number" id="freqOffset" step="any" value="0"></td>
-      </tr>
-      <tr>
-        <td>Override Frequency (MHz):</td>
-        <td><input type="number" id="overrideFreq" step="any" value="0"></td>
+        <td>Frequency Slot:</td>
+        <td><input type="number" id="channelNum" step="1" readonly></td>
       </tr>
       <tr>
         <td>Ignore MQTT:</td>

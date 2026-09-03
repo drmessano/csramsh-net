@@ -102,6 +102,12 @@ const PRESETS = {
   9: { label: "LongTurbo", bandwidth: 500, spreadFactor: 11, codingRate: 8 },
 };
 
+// Not a real Meshtastic firmware preset — a local shortcut for CSRA Mesh's
+// own custom radio settings. Selecting it is equivalent to Custom mode
+// (use_preset stays false; there's no matching ModemPreset value) with
+// these values pre-filled instead of typed in by hand.
+const CSRA_PRESET = { label: "CSRA", bandwidth: 500, spreadFactor: 9, codingRate: 5, channelNum: 47 };
+
 // Region is not exposed in the UI; every encoded config is hardcoded to US.
 const REGION_US = 1;
 
@@ -159,11 +165,13 @@ const state = {
   lora: {
     usePreset: true,
     modemPreset: 0,
+    // Which dropdown option is showing. Needed because both "Custom" and
+    // "CSRA" share usePreset:false (neither matches a real ModemPreset
+    // value), so usePreset/modemPreset alone can't tell them apart.
+    presetSelection: "0",
     bandwidth: PRESETS[0].bandwidth,
     spreadFactor: PRESETS[0].spreadFactor,
     codingRate: PRESETS[0].codingRate,
-    frequencyOffset: 0,
-    overrideFrequency: 0,
     hopLimit: 3,
     txEnabled: true,
     sx126xRxBoostedGain: true,
@@ -187,17 +195,16 @@ const state = {
 
 function renderLora() {
   const presetSel = document.getElementById("preset");
-  presetSel.value = state.lora.usePreset ? String(state.lora.modemPreset) : "custom";
+  presetSel.value = state.lora.presetSelection;
   document.getElementById("bandwidth").value = state.lora.bandwidth;
   document.getElementById("spreadFactor").value = state.lora.spreadFactor;
   document.getElementById("codingRate").value = state.lora.codingRate;
-  document.getElementById("freqOffset").value = state.lora.frequencyOffset;
-  document.getElementById("overrideFreq").value = state.lora.overrideFrequency;
+  document.getElementById("channelNum").value = state.lora.channelNum;
   document.getElementById("ignoreMqtt").checked = state.lora.ignoreMqtt;
   document.getElementById("configOkToMqtt").checked = state.lora.configOkToMqtt;
 
   const locked = state.lora.usePreset;
-  ["bandwidth", "spreadFactor", "codingRate"].forEach(id => {
+  ["bandwidth", "spreadFactor", "codingRate", "channelNum"].forEach(id => {
     const el = document.getElementById(id);
     el.readOnly = locked;
     el.classList.toggle("locked", locked);
@@ -380,8 +387,7 @@ function loadStateFromDecoded(obj) {
   const lora = obj.loraConfig || {};
   state.lora.usePreset = !!lora.usePreset;
   state.lora.modemPreset = lora.modemPreset || 0;
-  state.lora.frequencyOffset = lora.frequencyOffset || 0;
-  state.lora.overrideFrequency = lora.overrideFrequency || 0;
+  state.lora.presetSelection = state.lora.usePreset ? String(state.lora.modemPreset) : "custom";
   state.lora.hopLimit = lora.hopLimit || 0;
   state.lora.txEnabled = !!lora.txEnabled;
   state.lora.sx126xRxBoostedGain = !!lora.sx126xRxBoostedGain;
@@ -475,9 +481,9 @@ function buildChannelSet() {
     bandwidth: state.lora.bandwidth,
     spreadFactor: state.lora.spreadFactor,
     codingRate: state.lora.codingRate,
-    frequencyOffset: state.lora.frequencyOffset,
+    frequencyOffset: 0, // not exposed in the UI; hardcoded like region
     region: REGION_US,
-    overrideFrequency: state.lora.overrideFrequency,
+    overrideFrequency: 0, // not exposed in the UI; hardcoded like region
     hopLimit: state.lora.hopLimit,
     txEnabled: state.lora.txEnabled,
     txPower: state.lora.txPower,
@@ -535,15 +541,26 @@ function init() {
 
   document.getElementById("preset").addEventListener("change", e => {
     const val = e.target.value;
+    state.lora.presetSelection = val;
     if (val === "custom") {
       state.lora.usePreset = false;
+      // Nothing about Custom implies any particular key, so don't leave a
+      // stale one (e.g. the previous preset's Default key) sitting there.
+      const primary = state.channels.find(c => c.isPrimary) || state.channels[0];
+      if (primary) primary.psk = new Uint8Array(0);
     } else {
-      const p = PRESETS[Number(val)];
-      state.lora.usePreset = true;
-      state.lora.modemPreset = Number(val);
+      // Both a real firmware preset and CSRA (our own local shortcut, not
+      // a real ModemPreset) populate bandwidth/SF/CR/frequency slot and the
+      // primary channel the same way; only where the numbers come from
+      // differs.
+      const isCsra = val === "csra";
+      const p = isCsra ? CSRA_PRESET : PRESETS[Number(val)];
+      state.lora.usePreset = !isCsra;
+      state.lora.modemPreset = isCsra ? 0 : Number(val);
       state.lora.bandwidth = p.bandwidth;
       state.lora.spreadFactor = p.spreadFactor;
       state.lora.codingRate = p.codingRate;
+      state.lora.channelNum = p.channelNum || 0;
 
       if (state.channels.length === 0) {
         const primary = newChannel(p.label);
@@ -560,8 +577,7 @@ function init() {
     renderChannels();
   });
 
-  document.getElementById("freqOffset").addEventListener("input", e => { state.lora.frequencyOffset = parseFloat(e.target.value) || 0; });
-  document.getElementById("overrideFreq").addEventListener("input", e => { state.lora.overrideFrequency = parseFloat(e.target.value) || 0; });
+  document.getElementById("channelNum").addEventListener("input", e => { if (!state.lora.usePreset) state.lora.channelNum = parseInt(e.target.value, 10) || 0; });
   document.getElementById("ignoreMqtt").addEventListener("change", e => { state.lora.ignoreMqtt = e.target.checked; });
   document.getElementById("configOkToMqtt").addEventListener("change", e => { state.lora.configOkToMqtt = e.target.checked; });
   document.getElementById("bandwidth").addEventListener("input", e => { if (!state.lora.usePreset) state.lora.bandwidth = parseFloat(e.target.value) || 0; });
