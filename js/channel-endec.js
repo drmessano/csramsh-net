@@ -241,6 +241,7 @@ function renderLora() {
   });
   channelNumEl.readOnly = locked;
   channelNumEl.classList.toggle("locked", locked);
+  scheduleRegenerateOutput();
 }
 
 function renderChannels() {
@@ -285,7 +286,7 @@ function renderChannels() {
     // Meshtastic channel names must be under 12 bytes.
     nameInput.maxLength = 11;
     nameInput.value = ch.name;
-    nameInput.addEventListener("input", () => { ch.name = nameInput.value; });
+    nameInput.addEventListener("input", () => { ch.name = nameInput.value; scheduleRegenerateOutput(); });
     tdName.appendChild(nameInput);
 
     const tdPskEdit = document.createElement("td");
@@ -314,6 +315,7 @@ function renderChannels() {
       try {
         ch.psk = pskBase64ToBytes(pskVal.value);
         pskVal.classList.remove("input-error");
+        scheduleRegenerateOutput();
       } catch (e) {
         pskVal.classList.add("input-error");
       }
@@ -324,7 +326,7 @@ function renderChannels() {
     cbUp.type = "checkbox";
     cbUp.title = "Uplink: relay this channel's traffic to MQTT";
     cbUp.checked = !!ch.uplink;
-    cbUp.addEventListener("change", () => { ch.uplink = cbUp.checked; });
+    cbUp.addEventListener("change", () => { ch.uplink = cbUp.checked; scheduleRegenerateOutput(); });
     tdUp.appendChild(cbUp);
 
     const tdDown = document.createElement("td");
@@ -332,7 +334,7 @@ function renderChannels() {
     cbDown.type = "checkbox";
     cbDown.title = "Downlink: relay MQTT traffic into this channel";
     cbDown.checked = !!ch.downlink;
-    cbDown.addEventListener("change", () => { ch.downlink = cbDown.checked; });
+    cbDown.addEventListener("change", () => { ch.downlink = cbDown.checked; scheduleRegenerateOutput(); });
     tdDown.appendChild(cbDown);
 
     const tdDel = document.createElement("td");
@@ -356,6 +358,7 @@ function renderChannels() {
   });
 
   document.getElementById("addChannelBtn").disabled = state.channels.length >= 8;
+  scheduleRegenerateOutput();
 }
 
 function setQrStatus(text, cls) {
@@ -536,6 +539,40 @@ function buildChannelSet() {
   return ChannelSetType.encode(msg).finish();
 }
 
+// Rebuilds the URL + QR from current state right now. Called directly by
+// the button click (immediate) and via scheduleRegenerateOutput elsewhere
+// (debounced, so typing doesn't redraw the QR on every keystroke).
+function regenerateOutput() {
+  const out = document.getElementById("encodeResult");
+  const downloadBtn = document.getElementById("downloadQrBtn");
+  const copyBtn = document.getElementById("copyUrlBtn");
+  downloadBtn.disabled = true;
+  copyBtn.disabled = true;
+  try {
+    const bytes = buildChannelSet();
+    const b64url = bytesToBase64url(bytes);
+    const url = `https://meshtastic.org/e/#${b64url}`;
+    out.textContent = url;
+    copyBtn.disabled = false;
+    QRCode.toCanvas(document.getElementById("qrcode"), url, err => {
+      if (err) {
+        out.textContent += "\n\nQR render error: " + err.message;
+      } else {
+        downloadBtn.disabled = false;
+      }
+    });
+  } catch (err) {
+    out.textContent = "Error: " + err.message;
+  }
+}
+
+let regenerateTimer = null;
+let decodeTimer = null;
+function scheduleRegenerateOutput() {
+  clearTimeout(regenerateTimer);
+  regenerateTimer = setTimeout(regenerateOutput, 200);
+}
+
 function jsonReplacer(key, value) {
   if (key === "__settingsRawLengths") return undefined; // internal bookkeeping, not real protobuf content
   if (value instanceof Uint8Array) return `base64:${bytesToPskBase64(value)}`;
@@ -624,9 +661,10 @@ function init() {
     if (state.lora.presetSelection !== "custom") return;
     const n = parseInt(e.target.value, 10) || 0;
     state.lora.channelNum = Math.max(0, Math.min(n, maxChannelNumFor(state.lora.bandwidth)));
+    scheduleRegenerateOutput();
   });
-  document.getElementById("ignoreMqtt").addEventListener("change", e => { state.lora.ignoreMqtt = e.target.checked; });
-  document.getElementById("configOkToMqtt").addEventListener("change", e => { state.lora.configOkToMqtt = e.target.checked; });
+  document.getElementById("ignoreMqtt").addEventListener("change", e => { state.lora.ignoreMqtt = e.target.checked; scheduleRegenerateOutput(); });
+  document.getElementById("configOkToMqtt").addEventListener("change", e => { state.lora.configOkToMqtt = e.target.checked; scheduleRegenerateOutput(); });
   // Bandwidth/Spread Factor/Coding Rate are now <select> elements (only the
   // LoRa PHY's actual legal values are offered), so "change" fires on pick
   // rather than "input" on keystroke. Re-render after a bandwidth change so
@@ -636,8 +674,8 @@ function init() {
     state.lora.bandwidth = parseFloat(e.target.value) || 0;
     renderLora();
   });
-  document.getElementById("spreadFactor").addEventListener("change", e => { if (state.lora.presetSelection === "custom") state.lora.spreadFactor = parseInt(e.target.value, 10) || 0; });
-  document.getElementById("codingRate").addEventListener("change", e => { if (state.lora.presetSelection === "custom") state.lora.codingRate = parseInt(e.target.value, 10) || 0; });
+  document.getElementById("spreadFactor").addEventListener("change", e => { if (state.lora.presetSelection === "custom") { state.lora.spreadFactor = parseInt(e.target.value, 10) || 0; scheduleRegenerateOutput(); } });
+  document.getElementById("codingRate").addEventListener("change", e => { if (state.lora.presetSelection === "custom") { state.lora.codingRate = parseInt(e.target.value, 10) || 0; scheduleRegenerateOutput(); } });
 
   document.getElementById("addChannelBtn").addEventListener("click", () => {
     if (state.channels.length >= 8) return;
@@ -649,31 +687,29 @@ function init() {
   });
 
   document.getElementById("decodeBtn").addEventListener("click", () => {
+    clearTimeout(decodeTimer);
     decodeAndLoad(document.getElementById("decodeUrl").value.trim());
   });
 
-  document.getElementById("encodeBtn").addEventListener("click", () => {
-    const out = document.getElementById("encodeResult");
-    const downloadBtn = document.getElementById("downloadQrBtn");
-    const copyBtn = document.getElementById("copyUrlBtn");
-    downloadBtn.disabled = true;
-    copyBtn.disabled = true;
-    try {
-      const bytes = buildChannelSet();
-      const b64url = bytesToBase64url(bytes);
-      const url = `https://meshtastic.org/e/#${b64url}`;
-      out.textContent = url;
-      copyBtn.disabled = false;
-      QRCode.toCanvas(document.getElementById("qrcode"), url, err => {
-        if (err) {
-          out.textContent += "\n\nQR render error: " + err.message;
-        } else {
-          downloadBtn.disabled = false;
-        }
-      });
-    } catch (err) {
-      out.textContent = "Error: " + err.message;
+  // Auto-decode as you type/paste, debounced so it doesn't try mid-paste or
+  // on every keystroke of manual entry. Covers a real Cmd/Ctrl+V paste into
+  // the field directly; the Paste button below triggers decode itself since
+  // setting .value via JS doesn't fire this event.
+  document.getElementById("decodeUrl").addEventListener("input", e => {
+    clearTimeout(decodeTimer);
+    const value = e.target.value.trim();
+    if (!value) {
+      document.getElementById("decodeResult").textContent = "";
+      return;
     }
+    decodeTimer = setTimeout(() => decodeAndLoad(value), 400);
+  });
+
+  // The URL/QR already regenerate automatically (debounced) after every
+  // change; this button just forces it immediately, bypassing the debounce.
+  document.getElementById("encodeBtn").addEventListener("click", () => {
+    clearTimeout(regenerateTimer);
+    regenerateOutput();
   });
 
   document.getElementById("downloadQrBtn").addEventListener("click", () => {
@@ -702,6 +738,10 @@ function init() {
     try {
       const text = await navigator.clipboard.readText();
       document.getElementById("decodeUrl").value = text;
+      // Setting .value via JS doesn't fire an "input" event, so the
+      // auto-decode listener above wouldn't otherwise see this.
+      clearTimeout(decodeTimer);
+      decodeAndLoad(text.trim());
     } catch (err) {
       setQrStatus("Could not read clipboard: " + err.message, "fail");
     }
