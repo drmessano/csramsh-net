@@ -733,6 +733,26 @@ function init() {
     };
     reader.readAsDataURL(file);
   });
+
+  applyPresetFromQueryString();
+}
+
+// Lets a link pre-select a preset on load, e.g. channel-endec.html?preset=CSRA
+// (also accepts the raw option value, e.g. ?preset=csra or ?preset=9).
+// Matching is case-insensitive against the dropdown's visible label.
+function applyPresetFromQueryString() {
+  const presetParam = new URLSearchParams(window.location.search).get("preset");
+  if (!presetParam) return;
+
+  const presetSel = document.getElementById("preset");
+  const options = [...presetSel.options];
+  const needle = presetParam.trim().toLowerCase();
+  const match = options.find(o => o.value.toLowerCase() === needle)
+    || options.find(o => o.textContent.trim().toLowerCase() === needle);
+  if (!match) return;
+
+  presetSel.value = match.value;
+  presetSel.dispatchEvent(new Event("change"));
 }
 
 init();
