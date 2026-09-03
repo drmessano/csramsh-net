@@ -557,11 +557,11 @@ function regenerateOutput() {
     out.textContent = url;
     copyBtn.disabled = false;
 
-    // qr.html?qr=<fragment> is its own minimal page that just renders a QR
+    // qr.html?url=<fragment> is its own minimal page that just renders a QR
     // for the meshtastic.org URL — a link to it (not to this editor) so it
     // can be shared/scanned on its own. Resolved against this page's own
     // location so it works regardless of where the site is deployed.
-    const shareUrl = new URL(`qr.html?qr=${b64url}`, window.location.href).href;
+    const shareUrl = new URL(`qr.html?url=${b64url}`, window.location.href).href;
     document.getElementById("qrLink").href = shareUrl;
     shareBtn.disabled = false;
 
@@ -730,7 +730,7 @@ function init() {
     }
   });
 
-  // Copies the link to qr.html?qr=... (this QR's own shareable page), not
+  // Copies the link to qr.html?url=... (this QR's own shareable page), not
   // the meshtastic.org URL itself — same link as right-clicking the QR
   // above and copying it that way.
   document.getElementById("shareQrBtn").addEventListener("click", async () => {

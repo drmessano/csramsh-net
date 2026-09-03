@@ -29,7 +29,7 @@
 
   <script>
     const params = new URLSearchParams(window.location.search);
-    const frag = params.get("qr");
+    const frag = params.get("url");
     const qrWrap = document.getElementById("qrWrap");
     const urlEl = document.getElementById("urlText");
     const openLink = document.getElementById("openLink");
@@ -37,7 +37,7 @@
 
     if (!frag) {
       qrWrap.style.display = "none";
-      errEl.textContent = "No QR data provided. Expected this page's own address with ?qr=<code> appended.";
+      errEl.textContent = "No QR data provided. Expected this page's own address with ?url=<code> appended.";
     } else {
       const fullUrl = "https://meshtastic.org/e/#" + frag;
       urlEl.textContent = fullUrl;
