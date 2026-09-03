@@ -117,7 +117,7 @@ const PRESETS = {
 // isn't possible — Meshtastic PSKs must be exactly 0, 1, 16, or 32 bytes,
 // so anything longer than 1 byte has to jump straight to a full 16/32-byte
 // key.
-const CSRA_PRESET = { label: "CSRA", bandwidth: 500, spreadFactor: 9, codingRate: 5, channelNum: 47, psk: new Uint8Array([9]) };
+const CSRA_PRESET = { label: "CSRA", bandwidth: 500, spreadFactor: 9, codingRate: 5, channelNum: 6, psk: new Uint8Array([9]) };
 
 // Region is not exposed in the UI; every encoded config is hardcoded to US.
 const REGION_US = 1;
