@@ -92,7 +92,7 @@ message ChannelSet {
 // marked [deprecated = true] in the real .proto.
 const PRESETS = {
   0: { label: "LongFast", bandwidth: 250, spreadFactor: 11, codingRate: 5 },
-  1: { label: "LongSlow (Deprecated)", bandwidth: 125, spreadFactor: 12, codingRate: 8 },
+  1: { label: "LongSlow", bandwidth: 125, spreadFactor: 12, codingRate: 8 },
   3: { label: "MediumSlow", bandwidth: 250, spreadFactor: 10, codingRate: 5 },
   4: { label: "MediumFast", bandwidth: 250, spreadFactor: 9, codingRate: 5 },
   5: { label: "ShortSlow", bandwidth: 250, spreadFactor: 8, codingRate: 5 },
@@ -187,17 +187,6 @@ const state = {
 
 function renderLora() {
   const presetSel = document.getElementById("preset");
-  if (state.lora.usePreset && !PRESETS[state.lora.modemPreset]
-      && ![...presetSel.options].some(o => o.value === String(state.lora.modemPreset))) {
-    // A decoded config can specify a preset number we don't have (e.g. the
-    // now-nonfunctional VERY_LONG_SLOW=2, or a newer one we don't know
-    // about yet) — add it so the dropdown shows the real value instead of
-    // going blank, even though we can't offer real bandwidth/SF/CR for it.
-    const opt = document.createElement("option");
-    opt.value = String(state.lora.modemPreset);
-    opt.textContent = `Unknown/unsupported (${state.lora.modemPreset})`;
-    presetSel.appendChild(opt);
-  }
   presetSel.value = state.lora.usePreset ? String(state.lora.modemPreset) : "custom";
   document.getElementById("bandwidth").value = state.lora.bandwidth;
   document.getElementById("spreadFactor").value = state.lora.spreadFactor;
