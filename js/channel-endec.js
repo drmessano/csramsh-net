@@ -469,7 +469,10 @@ function loadStateFromDecoded(obj) {
       // carries this (undeclared-elsewhere) field round-trips instead of
       // silently losing it on re-encode.
       moduleSettings: s.moduleSettings || null,
-      pskEditable: false,
+      // Reflects what was actually decoded, not a fixed default — a channel
+      // that came in with real key bytes should show them (checked, PSK
+      // field populated), not silently hide a PSK that's genuinely present.
+      pskEditable: s.psk instanceof Uint8Array && s.psk.length > 0,
       isPrimary: i === 0,
       _rawLength: rawLengths[i],
     }))
