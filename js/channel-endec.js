@@ -106,7 +106,11 @@ const PRESETS = {
 // own custom radio settings. Selecting it is equivalent to Custom mode
 // (use_preset stays false; there's no matching ModemPreset value) with
 // these values pre-filled instead of typed in by hand.
-const CSRA_PRESET = { label: "CSRA", bandwidth: 500, spreadFactor: 9, codingRate: 5, channelNum: 47 };
+// psk 0x02 is "Simple2" — the protocol's own 1-byte shorthand scheme
+// (ChannelSettings.psk doc: byte 1 = "Default", bytes 2-10 = Simple1-9,
+// each just the default key with its last byte incremented). Short and
+// easy to exchange, same as the Default key ("AQ=="), but distinct from it.
+const CSRA_PRESET = { label: "CSRA", bandwidth: 500, spreadFactor: 9, codingRate: 5, channelNum: 47, psk: new Uint8Array([2]) };
 
 // Region is not exposed in the UI; every encoded config is hardcoded to US.
 const REGION_US = 1;
@@ -566,16 +570,17 @@ function init() {
       state.lora.spreadFactor = p.spreadFactor;
       state.lora.codingRate = p.codingRate;
       state.lora.channelNum = p.channelNum || 0;
+      const presetPsk = p.psk || new Uint8Array([1]); // the well-known Default key unless the preset specifies its own
 
       if (state.channels.length === 0) {
         const primary = newChannel(p.label);
-        primary.psk = new Uint8Array([1]);
+        primary.psk = presetPsk;
         primary.isPrimary = true;
         state.channels.push(primary);
       } else {
         const primary = state.channels.find(c => c.isPrimary) || state.channels[0];
         primary.name = p.label;
-        primary.psk = new Uint8Array([1]);
+        primary.psk = presetPsk;
       }
     }
     renderLora();
