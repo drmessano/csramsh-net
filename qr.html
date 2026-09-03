@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meshtastic Channel QR</title>
+  <link rel="stylesheet" href="css/skunkworks.css">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+  <style>
+    #qrWrap { border: 1px solid #33ff33; padding: 20px; margin-top: 20px; background-color: #000; }
+    #qrcode { display: block; }
+    #urlText {
+      margin-top: 16px;
+      max-width: 90vw;
+      word-break: break-all;
+      text-align: center;
+      font-size: 0.85rem;
+    }
+    #openLink { color: #33ff33; margin-top: 12px; display: inline-block; }
+    #errorText { color: #ff5555; margin-top: 20px; text-align: center; max-width: 90vw; }
+  </style>
+</head>
+<body>
+  <h1>Meshtastic Channel QR</h1>
+  <div id="qrWrap"><canvas id="qrcode"></canvas></div>
+  <div id="urlText"></div>
+  <a id="openLink" href="#" target="_blank" rel="noopener"></a>
+  <div id="errorText"></div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const frag = params.get("qr");
+    const qrWrap = document.getElementById("qrWrap");
+    const urlEl = document.getElementById("urlText");
+    const openLink = document.getElementById("openLink");
+    const errEl = document.getElementById("errorText");
+
+    if (!frag) {
+      qrWrap.style.display = "none";
+      errEl.textContent = "No QR data provided. Expected this page's own address with ?qr=<code> appended.";
+    } else {
+      const fullUrl = "https://meshtastic.org/e/#" + frag;
+      urlEl.textContent = fullUrl;
+      openLink.href = fullUrl;
+      openLink.textContent = "Open in Meshtastic";
+      QRCode.toCanvas(document.getElementById("qrcode"), fullUrl, { width: 320 }, err => {
+        if (err) {
+          qrWrap.style.display = "none";
+          errEl.textContent = "Could not render QR: " + err.message;
+        }
+      });
+    }
+  </script>
+</body>
+</html>

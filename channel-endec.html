@@ -137,14 +137,23 @@
       <table class="qr-table">
         <tr>
           <td class="qr-col"></td>
-          <td class="qr-col"><canvas id="qrcode"></canvas></td>
-          <td class="qr-col"><button type="button" id="downloadQrBtn" disabled>Download QR</button></td>
+          <td class="qr-col">
+            <a id="qrLink" href="#" target="_blank" rel="noopener" title="Right-click to copy the link to this QR's shareable page">
+              <canvas id="qrcode"></canvas>
+            </a>
+          </td>
+          <td class="qr-col">
+            <div class="qr-btn-stack">
+              <button type="button" id="downloadQrBtn" disabled>Download QR</button>
+              <button type="button" id="shareQrBtn" disabled>Share QR</button>
+            </div>
+          </td>
         </tr>
       </table>
       <h3>Encoded URL:</h3>
       <div class="input-with-btn url-box">
         <pre id="encodeResult"></pre>
-        <button type="button" id="copyUrlBtn" disabled>Copy</button>
+        <button type="button" id="copyUrlBtn" disabled>Copy/Share</button>
       </div>
     </div>
   </section>

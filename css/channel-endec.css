@@ -66,9 +66,13 @@ pre {
 #qrcode { display: inline-block; background-color: transparent; border-style: none; }
 
 /* 3 equal columns spanning the full row: left is empty, QR sits centered in
-   the middle column, Download QR sits centered in the right column. */
+   the middle column, Download/Share QR sit centered in the right column. */
 .qr-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
 .qr-table td.qr-col { width: 33.33%; border: none; padding: 0; text-align: center; vertical-align: middle; }
+#qrLink { display: inline-block; line-height: 0; } /* line-height:0 avoids extra gap under the canvas from the link being inline */
+/* Stacked vertically as one unit, centered by the td's vertical-align:middle
+   above rather than each button being centered independently. */
+.qr-btn-stack { display: inline-flex; flex-direction: column; align-items: center; gap: 14px; }
 
 /* Shared layout for "field + button" pairs: URL-to-paste, encoded-URL-to-copy. */
 .input-with-btn { display: flex; align-items: center; gap: 8px; width: 100%; box-sizing: border-box; }

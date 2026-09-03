@@ -545,8 +545,10 @@ function buildChannelSet() {
 function regenerateOutput() {
   const out = document.getElementById("encodeResult");
   const downloadBtn = document.getElementById("downloadQrBtn");
+  const shareBtn = document.getElementById("shareQrBtn");
   const copyBtn = document.getElementById("copyUrlBtn");
   downloadBtn.disabled = true;
+  shareBtn.disabled = true;
   copyBtn.disabled = true;
   try {
     const bytes = buildChannelSet();
@@ -554,6 +556,15 @@ function regenerateOutput() {
     const url = `https://meshtastic.org/e/#${b64url}`;
     out.textContent = url;
     copyBtn.disabled = false;
+
+    // qr.html?qr=<fragment> is its own minimal page that just renders a QR
+    // for the meshtastic.org URL — a link to it (not to this editor) so it
+    // can be shared/scanned on its own. Resolved against this page's own
+    // location so it works regardless of where the site is deployed.
+    const shareUrl = new URL(`qr.html?qr=${b64url}`, window.location.href).href;
+    document.getElementById("qrLink").href = shareUrl;
+    shareBtn.disabled = false;
+
     QRCode.toCanvas(document.getElementById("qrcode"), url, err => {
       if (err) {
         out.textContent += "\n\nQR render error: " + err.message;
@@ -711,6 +722,23 @@ function init() {
     if (!text) return;
     try {
       await navigator.clipboard.writeText(text);
+      const original = btn.textContent;
+      btn.textContent = "Copied!";
+      setTimeout(() => { btn.textContent = original; }, 1500);
+    } catch (err) {
+      setQrStatus("Could not copy to clipboard: " + err.message, "fail");
+    }
+  });
+
+  // Copies the link to qr.html?qr=... (this QR's own shareable page), not
+  // the meshtastic.org URL itself — same link as right-clicking the QR
+  // above and copying it that way.
+  document.getElementById("shareQrBtn").addEventListener("click", async () => {
+    const btn = document.getElementById("shareQrBtn");
+    const shareUrl = document.getElementById("qrLink").href;
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
       const original = btn.textContent;
       btn.textContent = "Copied!";
       setTimeout(() => { btn.textContent = original; }, 1500);
