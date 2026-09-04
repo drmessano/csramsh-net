@@ -407,7 +407,14 @@ async function decodeConfig(rawInput) {
   const bytes = base64urlToBytes(frag);
   const ChannelSet = root.lookupType("ChannelSet");
   const msg = ChannelSet.decode(bytes);
-  const obj = ChannelSet.toObject(msg, { defaults: true });
+  // defaults:false (the default) is what we want here: protobufjs omits a
+  // field from the object entirely when its decoded value equals the type's
+  // zero-value, which for proto3 is indistinguishable from "never set" —
+  // exactly the same "was this actually asserted" question buildChannelSet
+  // answers on the encode side. defaults:true would force every LoRaConfig
+  // field to print (as 0/false) even when our own encoder (or a real
+  // device's export) never wrote it at all, which is misleading here.
+  const obj = ChannelSet.toObject(msg);
   obj.__settingsRawLengths = getSettingsRawLengths(bytes);
   return obj;
 }
