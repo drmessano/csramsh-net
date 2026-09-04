@@ -126,22 +126,22 @@ const REGION_US = 1;
 // comment) — 0 = never send location on this channel, 32 = full/exact
 // location, and 10-19 are the practical obfuscated range the official apps
 // let you pick from (per meshtastic.org/docs/configuration/radio/channels).
-// Labels stay short (like Bandwidth/SF/CR's plain-number selects) so the
-// column doesn't blow out the table's width — the actual distance for each
-// bit count is set as the <option>'s title, shown on hover instead.
+// Labels spell out the actual distance so the number in the dropdown means
+// something at a glance — the Channels panel is allowed to grow past 900px
+// to fit this instead of squeezing it down to bare numbers.
 const PRECISION_LEVELS = [
-  { value: 0, label: "Off", title: "Disabled — location is never sent on this channel" },
-  { value: 10, label: "10", title: "~23.3 km / 14.5 mi" },
-  { value: 11, label: "11", title: "~11.7 km / 7.3 mi" },
-  { value: 12, label: "12", title: "~5.8 km / 3.6 mi" },
-  { value: 13, label: "13", title: "~2.9 km / 1.8 mi" },
-  { value: 14, label: "14", title: "~1.5 km / 4787 ft" },
-  { value: 15, label: "15", title: "~729 m / 2392 ft" },
-  { value: 16, label: "16", title: "~364 m / 1194 ft" },
-  { value: 17, label: "17", title: "~182 m / 597 ft" },
-  { value: 18, label: "18", title: "~91 m / 299 ft" },
-  { value: 19, label: "19", title: "~45 m / 148 ft" },
-  { value: 32, label: "Full", title: "Precise — full accuracy" },
+  { value: 0, label: "Disabled (never send location)" },
+  { value: 10, label: "10 (~23.3 km / 14.5 mi)" },
+  { value: 11, label: "11 (~11.7 km / 7.3 mi)" },
+  { value: 12, label: "12 (~5.8 km / 3.6 mi)" },
+  { value: 13, label: "13 (~2.9 km / 1.8 mi)" },
+  { value: 14, label: "14 (~1.5 km / 4787 ft)" },
+  { value: 15, label: "15 (~729 m / 2392 ft)" },
+  { value: 16, label: "16 (~364 m / 1194 ft)" },
+  { value: 17, label: "17 (~182 m / 597 ft)" },
+  { value: 18, label: "18 (~91 m / 299 ft)" },
+  { value: 19, label: "19 (~45 m / 148 ft)" },
+  { value: 32, label: "Precise (full accuracy)" },
 ];
 
 let root = null;
@@ -368,12 +368,11 @@ function renderChannels() {
     const tdPrecision = document.createElement("td");
     const selPrecision = document.createElement("select");
     selPrecision.className = "precision-sel";
-    selPrecision.title = "Bits of location precision shared on this channel (hover an option for its approximate radius)";
+    selPrecision.title = "Bits of location precision shared on this channel";
     PRECISION_LEVELS.forEach(p => {
       const opt = document.createElement("option");
       opt.value = p.value;
       opt.textContent = p.label;
-      opt.title = p.title;
       selPrecision.appendChild(opt);
     });
     selPrecision.value = ch.positionPrecision || 0;

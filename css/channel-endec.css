@@ -15,7 +15,7 @@ input:focus, select:focus, textarea:focus, button:focus {
   outline-offset: 1px;
 }
 form { margin-bottom: 30px; }
-table.form-table { width: 900px; border-collapse: collapse; }
+table.form-table { width: 1130px; border-collapse: collapse; }
 table.form-table td { border: 1px solid #00FF00; padding: 8px; text-align: center; vertical-align: middle; }
 table.form-table input[type="text"], table.form-table select {
   width: 95%;
@@ -49,7 +49,7 @@ input[type="submit"] {
 }
 .submit-row { text-align: center; margin-top: 10px; }
 pre {
-  width: 900px;
+  width: 1130px;
   background-color: black;
   color: #00FF00;
   border: 1px solid #00FF00;
@@ -66,7 +66,7 @@ pre {
   word-break: break-all;
   margin-top: 10px;
 }
-.output-block { width: 900px; margin-bottom: 30px; }
+.output-block { width: 1130px; margin-bottom: 30px; }
 .output-block h3 { font-size: 1.2em; margin-top: 0; margin-bottom: 10px; color: #00FF00; }
 /* inline-block (not block!) so the qr-col cell's text-align:center actually
    centers it — a block box ignores the parent's text-align entirely, which
@@ -109,21 +109,22 @@ pre {
 table.form-table .input-with-btn input[type="text"] { flex: 1; width: auto; }
 .input-with-btn pre { flex: 1; width: auto; margin-top: 0; }
 
-.back-link { width: 900px; text-align: left; }
+.back-link { width: 1130px; text-align: left; }
 .back-link a { color: #00FF00; }
 
 .panel {
-  width: 900px;
+  width: 1130px;
   border: 1px solid #00FF00;
   padding: 15px 20px 20px 20px;
   margin-bottom: 25px;
 }
 .panel h2 { margin-top: 0; }
 
-/* Every panel (including this one) is a fixed 900px — wide enough for a
-   fully-populated channel row (name + full-length base64 PSK) — so the box
-   never grows or shrinks as rows are added/removed. table-scroll is just a
-   safety net in case some browser's monospace metrics still overflow it. */
+/* Every panel (including this one) is a fixed 1130px — wide enough for a
+   fully-populated channel row (name + full-length base64 PSK + the
+   spelled-out Precision options) — so the box never grows or shrinks as
+   rows are added/removed. table-scroll is just a safety net in case some
+   browser's monospace metrics still overflow it. */
 .table-scroll { overflow-x: auto; }
 
 button {
@@ -186,14 +187,10 @@ table.channel-table select {
   min-width: 11ch;
   padding: 2px 4px;
 }
-/* Options are just "Off"/a bit count/"Full" (the full distance is the
-   option's title, shown on hover) — the generic 11ch min-width above is
-   sized for the Role select's "Secondary" and way more than this needs.
-   Neither min-width nor width shrinks it further than this in practice:
-   browsers floor a native <select>'s closed-state width to fit its arrow
-   plus native padding, regardless of author CSS — this is as narrow as
-   it gets without replacing the control's rendering entirely. */
-table.channel-table select.precision-sel { min-width: 0; }
+/* Options spell out the actual distance (e.g. "13 (~2.9 km / 1.8 mi)"),
+   so this needs more room than the generic 11ch above — sized to the
+   widest option ("Disabled (never send location)"). */
+table.channel-table select.precision-sel { min-width: 33ch; }
 .channel-table input:disabled, .channel-table select:disabled {
   color: #007700;
   background-color: #001100;
