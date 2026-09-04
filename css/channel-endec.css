@@ -186,6 +186,14 @@ table.channel-table select {
   min-width: 11ch;
   padding: 2px 4px;
 }
+/* Options are just "Off"/a bit count/"Full" (the full distance is the
+   option's title, shown on hover) — the generic 11ch min-width above is
+   sized for the Role select's "Secondary" and way more than this needs.
+   Neither min-width nor width shrinks it further than this in practice:
+   browsers floor a native <select>'s closed-state width to fit its arrow
+   plus native padding, regardless of author CSS — this is as narrow as
+   it gets without replacing the control's rendering entirely. */
+table.channel-table select.precision-sel { min-width: 0; }
 .channel-table input:disabled, .channel-table select:disabled {
   color: #007700;
   background-color: #001100;

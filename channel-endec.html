@@ -39,10 +39,10 @@
 
   <section class="panel">
     <h2>LoRa Config</h2>
-    <table class="form-table">
+    <table class="form-table lora-table">
       <tr>
         <td>Modem Preset:</td>
-        <td>
+        <td colspan="5">
           <select id="preset">
             <option value="0">LongFast</option>
             <option value="7">LongModerate</option>
@@ -74,8 +74,6 @@
             <option value="500">500</option>
           </select>
         </td>
-      </tr>
-      <tr>
         <td>Spread Factor:</td>
         <td>
           <select id="spreadFactor" disabled>
@@ -88,8 +86,6 @@
             <option value="12">12</option>
           </select>
         </td>
-      </tr>
-      <tr>
         <td>Coding Rate:</td>
         <td>
           <select id="codingRate" disabled>
@@ -103,12 +99,8 @@
       <tr>
         <td>Frequency Slot:</td>
         <td><input type="number" id="channelNum" step="1" min="0" readonly></td>
-      </tr>
-      <tr>
         <td>Ignore MQTT:</td>
         <td><input type="checkbox" id="ignoreMqtt" title="Don't forward MQTT messages over the mesh"></td>
-      </tr>
-      <tr>
         <td>OK to MQTT:</td>
         <td><input type="checkbox" id="configOkToMqtt" title="When true, approves this packet/config to be uploaded to MQTT. When false, remote nodes are asked not to forward packets to MQTT."></td>
       </tr>
@@ -121,7 +113,7 @@
       <table class="form-table channel-table">
         <thead>
           <tr>
-            <th>#</th><th>Role</th><th>Name</th><th>PSK</th><th>PSK (base64)</th><th title="Relay this channel's traffic to MQTT">MQTT Up</th><th title="Relay MQTT traffic into this channel">MQTT Down</th><th title="Silence notifications for messages on this channel">Muted</th><th title="Bits of location precision shared on this channel">Precision</th><th>Del</th>
+            <th>#</th><th>Role</th><th>Name</th><th>PSK</th><th>PSK (base64)</th><th title="Relay this channel's traffic to MQTT">MQTT Up</th><th title="Relay MQTT traffic into this channel">MQTT Down</th><th title="Silence notifications for messages on this channel">Muted</th><th title="Bits of location precision shared on this channel">Prec.</th><th>Del</th>
           </tr>
         </thead>
         <tbody id="channelRows"></tbody>
