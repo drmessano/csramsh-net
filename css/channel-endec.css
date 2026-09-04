@@ -154,6 +154,17 @@ table.form-table select#codingRate {
   width: 10ch;
   text-align: center;
 }
+/* Modem Preset gets a wider column (~25% more than the other 6, which
+   stay equal to each other) since its options ("LongModerate", "CSRA")
+   run longer than a bandwidth/SF/CR number ever does. table-layout:fixed
+   makes the <colgroup> widths below authoritative instead of advisory —
+   without it the browser re-derives column widths from cell content and
+   ignores them. 155/200 aren't the literal 25% split of 1130/7 (that's
+   ~155.9/~194.8) — rounded to clean numbers instead, still summing to
+   the table's own 1130px so nothing shifts or overflows. */
+table.lora-table { table-layout: fixed; }
+table.lora-table col.lora-col-wide { width: 200px; }
+table.lora-table col:not(.lora-col-wide) { width: 155px; }
 table.form-table input:disabled,
 table.form-table input:read-only.locked,
 table.form-table select:disabled {
