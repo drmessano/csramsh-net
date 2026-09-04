@@ -184,15 +184,9 @@ const state = {
     spreadFactor: PRESETS[0].spreadFactor,
     codingRate: PRESETS[0].codingRate,
     hopLimit: 3,
-    txEnabled: true,
-    sx126xRxBoostedGain: true,
-    overrideDutyCycle: false,
-    paFanDisabled: false,
-    txPower: 0,
     channelNum: 0,
     ignoreMqtt: false,
     configOkToMqtt: false,
-    serialHalOnly: false,
   },
   // Variable-length: only channels actually defined live here (1-8 entries).
   // Which one is primary is tracked by isPrimary, not by array position — the
@@ -424,15 +418,9 @@ function loadStateFromDecoded(obj) {
   state.lora.modemPreset = lora.modemPreset || 0;
   state.lora.presetSelection = state.lora.usePreset ? String(state.lora.modemPreset) : "custom";
   state.lora.hopLimit = lora.hopLimit || 0;
-  state.lora.txEnabled = !!lora.txEnabled;
-  state.lora.sx126xRxBoostedGain = !!lora.sx126xRxBoostedGain;
-  state.lora.overrideDutyCycle = !!lora.overrideDutyCycle;
-  state.lora.paFanDisabled = !!lora.paFanDisabled;
-  state.lora.txPower = lora.txPower || 0;
   state.lora.channelNum = lora.channelNum || 0;
   state.lora.ignoreMqtt = !!lora.ignoreMqtt;
   state.lora.configOkToMqtt = !!lora.configOkToMqtt;
-  state.lora.serialHalOnly = !!lora.serialHalOnly;
 
   if (state.lora.usePreset) {
     const p = PRESETS[state.lora.modemPreset] || PRESETS[0];
@@ -513,25 +501,24 @@ function buildChannelSet() {
     return s;
   });
 
+  // Deliberately omits frequencyOffset, txEnabled, txPower, overrideDutyCycle,
+  // sx126xRxBoostedGain, overrideFrequency, paFanDisabled, and serialHalOnly.
+  // These are either meaningless defaults or board-specific hardware settings
+  // (e.g. txPower, sx126xRxBoostedGain) that this tool has no business
+  // asserting for every radio that scans the QR — omitting the field lets
+  // each device keep its own configured/default value instead of this tool
+  // silently overwriting it.
   const loraConfig = {
     usePreset: state.lora.usePreset,
     modemPreset: state.lora.modemPreset,
     bandwidth: state.lora.bandwidth,
     spreadFactor: state.lora.spreadFactor,
     codingRate: state.lora.codingRate,
-    frequencyOffset: 0, // not exposed in the UI; hardcoded like region
     region: REGION_US,
-    overrideFrequency: 0, // not exposed in the UI; hardcoded like region
     hopLimit: state.lora.hopLimit,
-    txEnabled: state.lora.txEnabled,
-    txPower: state.lora.txPower,
     channelNum: state.lora.channelNum,
-    overrideDutyCycle: state.lora.overrideDutyCycle,
-    sx126xRxBoostedGain: state.lora.sx126xRxBoostedGain,
-    paFanDisabled: state.lora.paFanDisabled,
     ignoreMqtt: state.lora.ignoreMqtt,
     configOkToMqtt: state.lora.configOkToMqtt,
-    serialHalOnly: state.lora.serialHalOnly,
   };
 
   const payload = { settings, loraConfig };
