@@ -122,6 +122,27 @@ const CSRA_PRESET = { label: "CSRA", bandwidth: 500, spreadFactor: 9, codingRate
 // Region is not exposed in the UI; every encoded config is hardcoded to US.
 const REGION_US = 1;
 
+// ModuleSettings.position_precision is "bits of position precision" (proto
+// comment) — 0 = never send location on this channel, 32 = full/exact
+// location, and 10-19 are the practical obfuscated range the official apps
+// let you pick from (per meshtastic.org/docs/configuration/radio/channels).
+// Distances below are that page's own metric/imperial figures for each bit
+// count, shown so the number in the dropdown means something.
+const PRECISION_LEVELS = [
+  { value: 0, label: "Disabled" },
+  { value: 10, label: "10 (23.3km/14.5mi)" },
+  { value: 11, label: "11 (11.7km/7.3mi)" },
+  { value: 12, label: "12 (5.8km/3.6mi)" },
+  { value: 13, label: "13 (2.9km/1.8mi)" },
+  { value: 14, label: "14 (1.5km/4787ft)" },
+  { value: 15, label: "15 (729m/2392ft)" },
+  { value: 16, label: "16 (364m/1194ft)" },
+  { value: 17, label: "17 (182m/597ft)" },
+  { value: 18, label: "18 (91m/299ft)" },
+  { value: 19, label: "19 (45m/148ft)" },
+  { value: 32, label: "Precise" },
+];
+
 let root = null;
 
 function randomId() {
@@ -129,7 +150,11 @@ function randomId() {
 }
 
 function newChannel(name) {
-  return { name: name || "", psk: new Uint8Array(0), uplink: false, downlink: false, id: randomId(), pskEditable: false, isPrimary: false };
+  return {
+    name: name || "", psk: new Uint8Array(0), uplink: false, downlink: false,
+    id: randomId(), pskEditable: false, isPrimary: false,
+    positionPrecision: 0, isMuted: false,
+  };
 }
 
 // PSK is shown/edited as standard base64 (with padding), matching how the
@@ -194,7 +219,7 @@ const state = {
   // array is only reordered momentarily at encode time, since the Meshtastic
   // wire format itself has no role field and infers primary from position 0.
   channels: [
-    { name: "LongFast", psk: new Uint8Array([1]), uplink: false, downlink: false, id: randomId(), pskEditable: false, isPrimary: true },
+    { name: "LongFast", psk: new Uint8Array([1]), uplink: false, downlink: false, id: randomId(), pskEditable: false, isPrimary: true, positionPrecision: 0, isMuted: false },
   ],
 };
 
@@ -331,6 +356,27 @@ function renderChannels() {
     cbDown.addEventListener("change", () => { ch.downlink = cbDown.checked; scheduleRegenerateOutput(); });
     tdDown.appendChild(cbDown);
 
+    const tdMuted = document.createElement("td");
+    const cbMuted = document.createElement("input");
+    cbMuted.type = "checkbox";
+    cbMuted.title = "Mute: silence notifications for messages on this channel";
+    cbMuted.checked = !!ch.isMuted;
+    cbMuted.addEventListener("change", () => { ch.isMuted = cbMuted.checked; scheduleRegenerateOutput(); });
+    tdMuted.appendChild(cbMuted);
+
+    const tdPrecision = document.createElement("td");
+    const selPrecision = document.createElement("select");
+    selPrecision.title = "Bits of location precision shared on this channel";
+    PRECISION_LEVELS.forEach(p => {
+      const opt = document.createElement("option");
+      opt.value = p.value;
+      opt.textContent = p.label;
+      selPrecision.appendChild(opt);
+    });
+    selPrecision.value = ch.positionPrecision || 0;
+    selPrecision.addEventListener("change", () => { ch.positionPrecision = Number(selPrecision.value); scheduleRegenerateOutput(); });
+    tdPrecision.appendChild(selPrecision);
+
     const tdDel = document.createElement("td");
     const removeBtn = document.createElement("button");
     removeBtn.type = "button";
@@ -347,7 +393,7 @@ function renderChannels() {
     });
     tdDel.appendChild(removeBtn);
 
-    tr.append(tdIdx, tdRole, tdName, tdPskEdit, tdPskVal, tdUp, tdDown, tdDel);
+    tr.append(tdIdx, tdRole, tdName, tdPskEdit, tdPskVal, tdUp, tdDown, tdMuted, tdPrecision, tdDel);
     tbody.appendChild(tr);
   });
 
@@ -364,11 +410,11 @@ function setQrStatus(text, cls) {
 // Walks the raw ChannelSet wire bytes to find each `settings` (field 1)
 // entry's ORIGINAL byte length — independent of which sub-fields our schema
 // happens to declare. A entry a real device actually configured but using
-// only fields we don't parse (e.g. module_settings) is non-zero-length here
-// even though it decodes to an all-blank object under our trimmed schema;
-// a true placeholder/padding slot is genuinely 0 bytes. That distinction is
-// impossible to make from the decoded object alone, since protobufjs just
-// silently drops fields it doesn't recognize.
+// only fields our UI leaves at their default (e.g. module_settings set but
+// every other field blank) is non-zero-length here even though it decodes
+// to an all-blank object; a true placeholder/padding slot is genuinely 0
+// bytes. That distinction is impossible to make from the decoded object
+// alone, since a default-valued field and an absent one look identical.
 function getSettingsRawLengths(bytes) {
   let i = 0;
   const lengths = [];
@@ -445,8 +491,8 @@ function loadStateFromDecoded(obj) {
   // entry into a visible row resurrected those as phantom "Secondary"
   // channels. Whether a slot is real is decided by its ORIGINAL raw byte
   // length (see getSettingsRawLengths) — never by whether the fields we
-  // happen to parse are empty, since a slot can carry real data in a field
-  // we don't support (e.g. module_settings) and still look all-blank to us.
+  // parse are all default, since a field explicitly set to its zero value
+  // (e.g. position_precision: 0) is indistinguishable from one never set.
   const settings = obj.settings || [];
   const rawLengths = obj.__settingsRawLengths || [];
   state.channels = settings.slice(0, 8)
@@ -460,10 +506,8 @@ function loadStateFromDecoded(obj) {
       // data for a channel that never had any, and changes its re-encoded
       // bytes even when nothing was edited.
       id: s.id || 0,
-      // Not editable in the UI, but held onto verbatim so a channel that
-      // carries this (undeclared-elsewhere) field round-trips instead of
-      // silently losing it on re-encode.
-      moduleSettings: s.moduleSettings || null,
+      positionPrecision: (s.moduleSettings && s.moduleSettings.positionPrecision) || 0,
+      isMuted: !!(s.moduleSettings && s.moduleSettings.isMuted),
       // Reflects what was actually decoded, not a fixed default — a channel
       // that came in with real key bytes should show them (checked, PSK
       // field populated), not silently hide a PSK that's genuinely present.
@@ -502,9 +546,10 @@ function buildChannelSet() {
     if (ch.uplink) s.uplinkEnabled = true;
     if (ch.downlink) s.downlinkEnabled = true;
     if (ch.id) s.id = ch.id >>> 0;
-    // Re-emit verbatim if this channel came from a decode carrying it —
-    // we don't parse or expose it, but that's not a reason to drop it.
-    if (ch.moduleSettings) s.moduleSettings = ch.moduleSettings;
+    const moduleSettings = {};
+    if (ch.positionPrecision) moduleSettings.positionPrecision = ch.positionPrecision;
+    if (ch.isMuted) moduleSettings.isMuted = true;
+    if (Object.keys(moduleSettings).length > 0) s.moduleSettings = moduleSettings;
     return s;
   });
 
