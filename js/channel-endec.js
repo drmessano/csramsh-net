@@ -227,16 +227,18 @@ const state = {
     // tx_enabled and sx126x_rx_boosted_gain that zero-value is destructive
     // (an omitted tx_enabled reads back as false — TX gets disabled on
     // reboot), so these default to their real firmware defaults instead of
-    // being left out. txPower/overrideDutyCycle/overrideFrequency/
-    // paFanDisabled/serialHalOnly/frequencyOffset are genuinely safe at 0/
-    // false (their doc comments confirm 0 means "use the board's own safe
-    // default"), so those stay hardcoded at encode time. femLnaMode's safe
-    // default is NOT_PRESENT (2), not DISABLED (0) — firmware only disables
-    // a real LNA when it sees DISABLED explicitly; NOT_PRESENT is treated
-    // the same as ENABLED on hardware that actually has one.
+    // being left out. femLnaMode's safe default is NOT_PRESENT (2), not
+    // DISABLED (0) — firmware only disables a real LNA when it sees DISABLED
+    // explicitly; NOT_PRESENT is treated the same as ENABLED on hardware
+    // that actually has one. txPower's zero-value genuinely is safe/correct
+    // per its own doc comment ("if zero, use default max legal continuous
+    // power") — but it's still tracked and preserved here (rather than
+    // hardcoded to 0) so a decoded config that had a real board-calibrated
+    // value doesn't silently lose it on re-encode.
     txEnabled: true,
     sx126xRxBoostedGain: true,
     femLnaMode: 2,
+    txPower: 0,
   },
   // Variable-length: only channels actually defined live here (1-8 entries).
   // Which one is primary is tracked by isPrimary, not by array position — the
@@ -510,6 +512,7 @@ function loadStateFromDecoded(obj) {
   state.lora.txEnabled = "txEnabled" in lora ? !!lora.txEnabled : true;
   state.lora.sx126xRxBoostedGain = "sx126xRxBoostedGain" in lora ? !!lora.sx126xRxBoostedGain : true;
   state.lora.femLnaMode = "femLnaMode" in lora ? lora.femLnaMode : 2;
+  state.lora.txPower = lora.txPower || 0;
 
   if (state.lora.usePreset) {
     const p = PRESETS[state.lora.modemPreset] || PRESETS[0];
@@ -604,21 +607,32 @@ function buildChannelSet() {
   // silently killed TX on any device that applied the resulting QR. They're
   // always included now, sourced from state (preserved on decode, or a safe
   // default for a config built from scratch — see the state.lora comment).
-  const loraConfig = {
-    usePreset: state.lora.usePreset,
-    modemPreset: state.lora.modemPreset,
-    bandwidth: state.lora.bandwidth,
-    spreadFactor: state.lora.spreadFactor,
-    codingRate: state.lora.codingRate,
-    region: REGION_US,
-    hopLimit: state.lora.hopLimit,
-    txEnabled: state.lora.txEnabled,
-    channelNum: state.lora.channelNum,
-    sx126xRxBoostedGain: state.lora.sx126xRxBoostedGain,
-    ignoreMqtt: state.lora.ignoreMqtt,
-    configOkToMqtt: state.lora.configOkToMqtt,
-    femLnaMode: state.lora.femLnaMode,
-  };
+  // Same "only include what's actually non-default" rule as the channel
+  // settings above — matches how real device exports encode this message
+  // (a real export never includes use_preset/modem_preset/ignore_mqtt when
+  // they're false/0 either) and keeps the URL from asserting a value that's
+  // indistinguishable from "unset" on the wire anyway.
+  const loraConfig = { region: REGION_US };
+  if (state.lora.usePreset) loraConfig.usePreset = true;
+  if (state.lora.modemPreset) loraConfig.modemPreset = state.lora.modemPreset;
+  if (state.lora.bandwidth) loraConfig.bandwidth = state.lora.bandwidth;
+  if (state.lora.spreadFactor) loraConfig.spreadFactor = state.lora.spreadFactor;
+  if (state.lora.codingRate) loraConfig.codingRate = state.lora.codingRate;
+  if (state.lora.hopLimit) loraConfig.hopLimit = state.lora.hopLimit;
+  if (state.lora.channelNum) loraConfig.channelNum = state.lora.channelNum;
+  if (state.lora.ignoreMqtt) loraConfig.ignoreMqtt = true;
+  if (state.lora.configOkToMqtt) loraConfig.configOkToMqtt = true;
+  if (state.lora.txPower) loraConfig.txPower = state.lora.txPower;
+  // These three are never safe to omit even at their default — see the
+  // state.lora comment above (omitting tx_enabled/sx126x_rx_boosted_gain
+  // resets them to a destructive false; femLnaMode's safe value is
+  // NOT_PRESENT(2), not the omitted-default DISABLED(0)). In practice they
+  // never actually equal their destructive default in state (see
+  // loadStateFromDecoded), but they're included unconditionally on purpose
+  // rather than relying on that.
+  loraConfig.txEnabled = state.lora.txEnabled;
+  loraConfig.sx126xRxBoostedGain = state.lora.sx126xRxBoostedGain;
+  loraConfig.femLnaMode = state.lora.femLnaMode;
 
   const payload = { settings, loraConfig };
   const ChannelSetType = ChannelSet;
