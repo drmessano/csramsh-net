@@ -610,10 +610,16 @@ function buildChannelSet() {
   //
   // Same "only include what's actually non-default" rule as the channel
   // settings above otherwise — matches how real device exports encode this
-  // message (a real export never includes use_preset/modem_preset/
-  // ignore_mqtt when they're false/0 either).
+  // message (a real export never includes modem_preset/ignore_mqtt when
+  // they're false/0 either).
   const loraConfig = { region: REGION_US, txPower: 0 };
-  if (state.lora.usePreset) loraConfig.usePreset = true;
+  // use_preset is sent explicitly either way (true for a real preset,
+  // false for Custom/CSRA) rather than relying on omission-means-false —
+  // it's the flag that decides whether the device recomputes bandwidth/SF/
+  // CR from modem_preset or uses the explicit values below, so it gets the
+  // same "always present" treatment as txEnabled/femLnaMode/
+  // sx126xRxBoostedGain rather than the omit-if-default treatment.
+  loraConfig.usePreset = state.lora.usePreset;
   if (state.lora.modemPreset) loraConfig.modemPreset = state.lora.modemPreset;
   if (state.lora.bandwidth) loraConfig.bandwidth = state.lora.bandwidth;
   if (state.lora.spreadFactor) loraConfig.spreadFactor = state.lora.spreadFactor;
