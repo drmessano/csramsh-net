@@ -199,9 +199,13 @@ table.channel-table select {
   padding: 2px 4px;
 }
 /* Options spell out the actual distance (e.g. "13 (~2.9 km / 1.8 mi)"),
-   so this needs more room than the generic 11ch above — sized to the
-   widest option ("Disabled (never send location)"). */
-table.channel-table select.precision-sel { min-width: 33ch; }
+   so this needs more room than the generic 11ch above. A native select's
+   closed width is set by its single WIDEST option regardless of which one
+   is selected — measured at 213px with "Disabled (no position)"/"10 (~23.3
+   km / 14.5 mi)"/"Precise (full accuracy)" tied for longest, so ch units
+   (which assume a fixed monospace advance the browser doesn't guarantee
+   for its own select chrome) aren't reliable here; a measured px value is. */
+table.channel-table select.precision-sel { min-width: 215px; }
 .channel-table input:disabled, .channel-table select:disabled {
   color: #007700;
   background-color: #001100;

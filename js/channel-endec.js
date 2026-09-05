@@ -130,7 +130,7 @@ const REGION_US = 1;
 // something at a glance — the Channels panel is allowed to grow past 900px
 // to fit this instead of squeezing it down to bare numbers.
 const PRECISION_LEVELS = [
-  { value: 0, label: "Disabled (never send location)" },
+  { value: 0, label: "Disabled (no position)" },
   { value: 10, label: "10 (~23.3 km / 14.5 mi)" },
   { value: 11, label: "11 (~11.7 km / 7.3 mi)" },
   { value: 12, label: "12 (~5.8 km / 3.6 mi)" },
