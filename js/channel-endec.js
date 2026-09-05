@@ -230,26 +230,19 @@ const state = {
     // amplifier via firmware's `setLNAEnable(fem_lna_mode != DISABLED)`),
     // so they're always forced to a safe value — see buildChannelSet.
     //
-    // tx_power and sx126x_rx_boosted_gain are different: 0/false really is
-    // a safe, documented default (tx_power's own comment: "if zero, use
-    // default max legal continuous power") — but firmware also uses them,
-    // alongside bandwidth/spreadFactor/etc., to decide whether an admin
-    // write actually changes anything (AdminModule.cpp: a set_config.lora
-    // whose fields all equal the device's current values skips the reboot
-    // it would otherwise trigger). Sending 0/false when the device's real
-    // values are e.g. 30/true doesn't match, forces an otherwise-unneeded
-    // reboot, and that reboot is what was actually failing to complete
-    // (confirmed: the user's own real device export — which naturally
-    // carries its own already-current tx_power/gain — applies with zero
-    // issues, while this tool's version, which dropped both fields, did
-    // not). So these two are tracked and preserved on decode after all —
-    // still defaulting to the safe 0/false (omitted) for a config built
-    // from scratch, since there's no real device value to match against
-    // in that case, but no longer discarded when we actually know one.
+    // tx_power and sx126x_rx_boosted_gain are forced to their safe
+    // defaults (0/false) always, never preserved from a decode — a
+    // specific board's calibrated tx_power/gain isn't something this tool
+    // should carry forward onto whatever other board scans the resulting
+    // QR. Forcing these to a value the device's current config doesn't
+    // already match will make set_config.lora trigger a reboot to apply
+    // it — that's expected and fine (it's the device's own confirmation
+    // that the write was received and is being applied), not something to
+    // engineer around. If a reboot doesn't fully complete over a given
+    // connection, that's a `meshtastic --ch-set-url` / `--wait-to-disconnect`
+    // concern, not a reason for this tool to avoid ever triggering one.
     txEnabled: true,
     femLnaMode: 2,
-    txPower: 0,
-    sx126xRxBoostedGain: false,
   },
   // Variable-length: only channels actually defined live here (1-8 entries).
   // Which one is primary is tracked by isPrimary, not by array position — the
@@ -522,8 +515,6 @@ function loadStateFromDecoded(obj) {
   // case to the safe default rather than silently carrying it forward.
   state.lora.txEnabled = "txEnabled" in lora ? !!lora.txEnabled : true;
   state.lora.femLnaMode = "femLnaMode" in lora ? lora.femLnaMode : 2;
-  state.lora.txPower = lora.txPower || 0;
-  state.lora.sx126xRxBoostedGain = !!lora.sx126xRxBoostedGain;
 
   if (state.lora.usePreset) {
     const p = PRESETS[state.lora.modemPreset] || PRESETS[0];
@@ -603,22 +594,20 @@ function buildChannelSet() {
     return s;
   });
 
-  // frequencyOffset/txPower/overrideDutyCycle/sx126xRxBoostedGain/
-  // overrideFrequency/paFanDisabled/serialHalOnly are all omitted — a real
-  // device's own set_config.lora handler does a full struct replace
-  // (confirmed against firmware's AdminModule.cpp), so an omitted field
-  // resets to its proto3 zero-value on the receiving device, and 0/false
-  // genuinely IS the safe, documented default for all of these (e.g.
-  // tx_power's doc comment: "if zero, use default max legal continuous
-  // power"; sx126x_rx_boosted_gain just falls back to standard, non-boosted
-  // RX gain — a real, supported mode, not a broken one). They're
-  // board-specific tuning this tool has no business asserting.
+  // frequencyOffset/overrideDutyCycle/sx126xRxBoostedGain/overrideFrequency/
+  // paFanDisabled/serialHalOnly are all omitted — a real device's own
+  // set_config.lora handler does a full struct replace (confirmed against
+  // firmware's AdminModule.cpp), so an omitted field resets to its proto3
+  // zero-value on the receiving device, and 0/false genuinely IS the safe,
+  // documented default for all of these. They're board-specific tuning
+  // this tool has no business asserting — see the state.lora comment for
+  // why sx126xRxBoostedGain and txPower are treated this way now too.
   //
   // Same "only include what's actually non-default" rule as the channel
   // settings above otherwise — matches how real device exports encode this
   // message (a real export never includes use_preset/modem_preset/
   // ignore_mqtt when they're false/0 either).
-  const loraConfig = { region: REGION_US };
+  const loraConfig = { region: REGION_US, txPower: 0 };
   if (state.lora.usePreset) loraConfig.usePreset = true;
   if (state.lora.modemPreset) loraConfig.modemPreset = state.lora.modemPreset;
   if (state.lora.bandwidth) loraConfig.bandwidth = state.lora.bandwidth;
@@ -628,11 +617,6 @@ function buildChannelSet() {
   if (state.lora.channelNum) loraConfig.channelNum = state.lora.channelNum;
   if (state.lora.ignoreMqtt) loraConfig.ignoreMqtt = true;
   if (state.lora.configOkToMqtt) loraConfig.configOkToMqtt = true;
-  // Preserved from a decode when known (matching the device's own current
-  // value avoids triggering a reboot the device doesn't actually need —
-  // see the state.lora comment above) but not forced on a fresh config.
-  if (state.lora.txPower) loraConfig.txPower = state.lora.txPower;
-  if (state.lora.sx126xRxBoostedGain) loraConfig.sx126xRxBoostedGain = true;
   // These two are never safe to omit even at their default — see the
   // state.lora comment above (omitting tx_enabled resets it to a
   // destructive false; femLnaMode's safe value is NOT_PRESENT(2), not the
