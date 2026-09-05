@@ -20,6 +20,12 @@ enum ModemPreset {
   LONG_TURBO = 9;
 }
 
+enum FemLnaMode {
+  DISABLED = 0;
+  ENABLED = 1;
+  NOT_PRESENT = 2;
+}
+
 enum RegionCode {
   UNSET = 0;
   US = 1;
@@ -60,6 +66,7 @@ message LoRaConfig {
   bool pa_fan_disabled = 15;
   bool ignore_mqtt = 104;
   bool config_ok_to_mqtt = 105;
+  FemLnaMode fem_lna_mode = 106;
   bool serial_hal_only = 107;
 }
 
@@ -213,6 +220,23 @@ const state = {
     channelNum: 0,
     ignoreMqtt: false,
     configOkToMqtt: false,
+    // Not exposed in the UI, but NOT safe to omit from the encoded output —
+    // set_config.lora is a full struct replace on the device (confirmed
+    // against firmware's AdminModule.cpp: `config.lora = validatedLora;`),
+    // so any field we don't send gets reset to its proto3 zero-value. For
+    // tx_enabled and sx126x_rx_boosted_gain that zero-value is destructive
+    // (an omitted tx_enabled reads back as false — TX gets disabled on
+    // reboot), so these default to their real firmware defaults instead of
+    // being left out. txPower/overrideDutyCycle/overrideFrequency/
+    // paFanDisabled/serialHalOnly/frequencyOffset are genuinely safe at 0/
+    // false (their doc comments confirm 0 means "use the board's own safe
+    // default"), so those stay hardcoded at encode time. femLnaMode's safe
+    // default is NOT_PRESENT (2), not DISABLED (0) — firmware only disables
+    // a real LNA when it sees DISABLED explicitly; NOT_PRESENT is treated
+    // the same as ENABLED on hardware that actually has one.
+    txEnabled: true,
+    sx126xRxBoostedGain: true,
+    femLnaMode: 2,
   },
   // Variable-length: only channels actually defined live here (1-8 entries).
   // Which one is primary is tracked by isPrimary, not by array position — the
@@ -476,6 +500,16 @@ function loadStateFromDecoded(obj) {
   state.lora.channelNum = lora.channelNum || 0;
   state.lora.ignoreMqtt = !!lora.ignoreMqtt;
   state.lora.configOkToMqtt = !!lora.configOkToMqtt;
+  // Proto3 omits a field that's exactly its zero-value, so a decoded config
+  // can never actually distinguish "explicitly false/DISABLED" from "never
+  // set" here — real device exports have the same limitation (confirmed:
+  // one never includes use_preset/modem_preset when both are 0). Given
+  // that ambiguity, and that the zero-value for these three is destructive
+  // (see the default block above), always resolve the absent case to the
+  // safe default rather than silently carrying a false/DISABLED forward.
+  state.lora.txEnabled = "txEnabled" in lora ? !!lora.txEnabled : true;
+  state.lora.sx126xRxBoostedGain = "sx126xRxBoostedGain" in lora ? !!lora.sx126xRxBoostedGain : true;
+  state.lora.femLnaMode = "femLnaMode" in lora ? lora.femLnaMode : 2;
 
   if (state.lora.usePreset) {
     const p = PRESETS[state.lora.modemPreset] || PRESETS[0];
@@ -555,13 +589,21 @@ function buildChannelSet() {
     return s;
   });
 
-  // Deliberately omits frequencyOffset, txEnabled, txPower, overrideDutyCycle,
-  // sx126xRxBoostedGain, overrideFrequency, paFanDisabled, and serialHalOnly.
-  // These are either meaningless defaults or board-specific hardware settings
-  // (e.g. txPower, sx126xRxBoostedGain) that this tool has no business
-  // asserting for every radio that scans the QR — omitting the field lets
-  // each device keep its own configured/default value instead of this tool
-  // silently overwriting it.
+  // frequencyOffset/txPower/overrideDutyCycle/overrideFrequency/
+  // paFanDisabled/serialHalOnly are omitted — a real device's own
+  // set_config.lora handler does a full struct replace (confirmed against
+  // firmware's AdminModule.cpp), so an omitted field resets to its proto3
+  // zero-value on the receiving device, and 0/false genuinely IS the safe,
+  // documented default for all six of these (e.g. tx_power's doc comment:
+  // "if zero, use default max legal continuous power").
+  //
+  // txEnabled, sx126xRxBoostedGain, and femLnaMode are NOT safe to omit the
+  // same way — their zero-value is destructive (tx_enabled:false disables
+  // the transmitter entirely; femLnaMode:DISABLED turns off a real front-end
+  // amplifier). A previous version of this tool omitted them too, which
+  // silently killed TX on any device that applied the resulting QR. They're
+  // always included now, sourced from state (preserved on decode, or a safe
+  // default for a config built from scratch — see the state.lora comment).
   const loraConfig = {
     usePreset: state.lora.usePreset,
     modemPreset: state.lora.modemPreset,
@@ -570,9 +612,12 @@ function buildChannelSet() {
     codingRate: state.lora.codingRate,
     region: REGION_US,
     hopLimit: state.lora.hopLimit,
+    txEnabled: state.lora.txEnabled,
     channelNum: state.lora.channelNum,
+    sx126xRxBoostedGain: state.lora.sx126xRxBoostedGain,
     ignoreMqtt: state.lora.ignoreMqtt,
     configOkToMqtt: state.lora.configOkToMqtt,
+    femLnaMode: state.lora.femLnaMode,
   };
 
   const payload = { settings, loraConfig };
